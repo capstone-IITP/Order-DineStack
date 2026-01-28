@@ -289,7 +289,6 @@ const ScanQRView = ({ onScanSuccess, onCancel }: { onScanSuccess: (rId: string, 
           aspectRatio: 1.0,
         },
         (decodedText) => {
-          // Success callback
           try {
             const url = new URL(decodedText);
             const params = new URLSearchParams(url.search);
@@ -306,9 +305,7 @@ const ScanQRView = ({ onScanSuccess, onCancel }: { onScanSuccess: (rId: string, 
             console.error("QR Parse Error", e);
           }
         },
-        (errorMessage) => {
-          // parse error, ignore
-        }
+        (errorMessage) => { }
       );
     } catch (err) {
       console.error("Error starting scanner", err);
@@ -322,59 +319,111 @@ const ScanQRView = ({ onScanSuccess, onCancel }: { onScanSuccess: (rId: string, 
       try {
         await scannerRef.current.stop();
         scannerRef.current = null;
-      } catch (e) {
-        console.error("Failed to stop scanner", e);
-      }
+      } catch (e) { console.error(e); }
     }
     setScanning(false);
   };
 
   return (
-    <div className="flex-1 flex flex-col justify-center items-center w-full max-w-md mx-auto h-full p-6 animate-fade-in relative z-20">
-      <div className="glass-panel w-full rounded-3xl p-6 flex flex-col items-center space-y-6 relative overflow-hidden">
-        <div className="text-center space-y-2">
-          <div className="w-16 h-16 bg-[#FDF2F6] rounded-full flex items-center justify-center mx-auto mb-4">
-            <ScanLine className="w-8 h-8 text-[#8D0B41]" />
+    <div className="flex-1 flex flex-col justify-center items-center w-full max-w-md mx-auto h-full p-4 animate-fade-in relative z-20">
+
+      {/* Main Glass Panel */}
+      <div className="glass-panel w-full rounded-[2.5rem] p-1 flex flex-col items-center relative overflow-hidden shadow-2xl border border-white/40">
+
+        {/* Header Section (Only visible when not scanning or overlaying) */}
+        <div className={`w-full p-6 text-center space-y-3 transition-all duration-500 ${scanning ? 'h-0 opacity-0 overflow-hidden p-0' : 'opacity-100'}`}>
+          <div className="w-16 h-16 bg-gradient-to-tr from-[#8D0B41] to-[#B01E58] rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-[#8D0B41]/30 rotate-3">
+            <ScanLine className="w-8 h-8 text-white" />
           </div>
-          <h2 className="text-2xl font-serif-custom font-bold text-[#5A0528]">Scan to Order</h2>
-          <p className="text-gray-600 text-sm">Please scan the QR code on your table to access the menu.</p>
+          <h2 className="text-3xl font-serif-custom font-bold text-[#5A0528] tracking-tight">Begin Your<br />Dining Experience</h2>
+          <p className="text-gray-600 text-[15px] leading-relaxed max-w-[260px] mx-auto">Scan the QR code on your table to unlock our digital menu.</p>
         </div>
 
-        {permissionError && (
-          <div className="bg-red-50 text-red-600 p-4 rounded-xl text-sm w-full text-center mb-4">
-            Camera permission denied. Please check your browser settings.
-          </div>
-        )}
+        {/* Camera Container */}
+        <div className={`relative w-full transition-all duration-500 overflow-hidden ${scanning ? 'h-[500px] rounded-[2rem]' : 'h-[200px] rounded-3xl bg-gray-50/50'}`}>
 
-        <div className="w-full relative rounded-2xl overflow-hidden bg-black/5 min-h-[300px] flex flex-col items-center justify-center">
-          {/* The ID 'reader' is used by Html5Qrcode */}
-          <div id="reader" className="w-full h-full absolute inset-0"></div>
-
-          {!scanning && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center z-10 bg-gray-50/80 backdrop-blur-sm p-6 text-center space-y-4">
-              <p className="text-gray-500 text-sm">Camera access is needed to scan the QR code.</p>
-              <button
-                onClick={startScanning}
-                className="w-full bg-[#8D0B41] text-white py-3 px-6 rounded-xl font-medium shadow-lg shadow-[#8D0B41]/20 hover:bg-[#B01E58] active:scale-[0.98] transition-all flex items-center justify-center gap-2"
-              >
-                <Camera className="w-5 h-5" />
-                <span>Start Camera</span>
-              </button>
+          {/* Permission Error */}
+          {permissionError && (
+            <div className="absolute inset-0 z-50 flex items-center justify-center bg-gray-50 p-6 text-center animate-fade-in">
+              <div className="space-y-3">
+                <div className="w-12 h-12 bg-red-100 text-red-500 rounded-full flex items-center justify-center mx-auto"><WifiOff className="w-6 h-6" /></div>
+                <p className="text-red-600 font-medium">Camera access denied</p>
+                <p className="text-xs text-gray-400">Please enable camera permissions in your browser settings.</p>
+                <button onClick={startScanning} className="text-xs font-bold text-[#8D0B41] underline mt-2">Try Again</button>
+              </div>
             </div>
           )}
 
+          {/* Actual Camera Feed */}
+          <div id="reader" className="w-full h-full object-cover"></div>
+
+          {/* Call to Action (Idle) */}
+          {!scanning && !permissionError && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-50/50 backdrop-blur-[2px] space-y-6">
+              <button
+                onClick={startScanning}
+                className="group relative px-8 py-4 bg-[#8D0B41] text-white rounded-2xl font-bold shadow-xl shadow-[#8D0B41]/25 hover:shadow-2xl hover:shadow-[#8D0B41]/40 hover:scale-105 active:scale-95 transition-all overflow-hidden"
+              >
+                <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
+                <div className="relative flex items-center gap-3">
+                  <Camera className="w-5 h-5" />
+                  <span className="tracking-wide">Enable Camera</span>
+                </div>
+              </button>
+
+              <div className="flex flex-col items-center space-y-3 animate-fade-in delay-200">
+                <div className="flex items-center gap-3 w-32 opacity-40">
+                  <div className="h-[1px] bg-black flex-1"></div>
+                  <span className="text-[10px] font-bold text-black uppercase tracking-widest">OR</span>
+                  <div className="h-[1px] bg-black flex-1"></div>
+                </div>
+                <p className="text-sm font-medium text-gray-500">Use your phone's native camera</p>
+              </div>
+            </div>
+          )}
+
+          {/* Viewfinder Overlay (Scanning) */}
           {scanning && (
-            <div className="absolute bottom-4 z-20">
+            <div className="absolute inset-0 pointer-events-none z-10 flex flex-col items-center justify-center">
+
+              {/* Scanning Frame with Shadow Hole */}
+              <div className="relative w-64 h-64 border border-white/20 rounded-3xl shadow-[0_0_0_100vmax_rgba(0,0,0,0.5)]">
+                {/* Corner Markers */}
+                <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-[#8D0B41] rounded-tl-xl -translate-x-1 -translate-y-1"></div>
+                <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-[#8D0B41] rounded-tr-xl translate-x-1 -translate-y-1"></div>
+                <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-[#8D0B41] rounded-bl-xl -translate-x-1 translate-y-1"></div>
+                <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-[#8D0B41] rounded-br-xl translate-x-1 translate-y-1"></div>
+
+                {/* Laser */}
+                <div className="absolute left-2 right-2 h-0.5 bg-gradient-to-r from-transparent via-red-500 to-transparent shadow-[0_0_15px_rgba(255,0,0,0.8)] animate-laser"></div>
+
+                <div className="absolute -bottom-12 left-0 right-0 text-center">
+                  <p className="text-white/90 text-sm font-medium tracking-wider shadow-sm backdrop-blur-md bg-black/20 py-1 px-3 rounded-full inline-block">Align QR code within frame</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Cancel Button (Scanning) */}
+          {scanning && (
+            <div className="absolute bottom-6 left-0 right-0 flex justify-center z-20">
               <button
                 onClick={stopScanning}
-                className="bg-white/90 backdrop-blur text-[#8D0B41] px-4 py-2 rounded-full text-sm font-semibold shadow-md hover:bg-white"
+                className="bg-white/10 backdrop-blur-md border border-white/20 text-white px-6 py-2.5 rounded-full text-sm font-semibold hover:bg-white/20 transition-all active:scale-95 flex items-center gap-2"
               >
-                Stop Scanning
+                <X className="w-4 h-4" />
+                <span>Cancel</span>
               </button>
             </div>
           )}
         </div>
       </div>
+
+      {!scanning && (
+        <div className="mt-8 text-center opacity-60">
+          <p className="text-[10px] uppercase tracking-[0.2em] text-[#5A0528]">Powered by TapTable</p>
+        </div>
+      )}
     </div>
   );
 };
@@ -1485,6 +1534,8 @@ function AppContent() {
         .animate-spin-slow { animation: spin-slow 12s linear infinite; }
         .animate-fade-in { animation: fade-in-down 1.2s ease-out forwards; }
         .animate-slide-up { animation: slide-up-fade 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; opacity: 0; animation-delay: 0.2s; }
+    .animate-laser { animation: scan-laser 2s linear infinite; }
+        @keyframes scan-laser { 0% { top: 0%; opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { top: 100%; opacity: 0; } }
       `}</style>
 
       {view !== 'menu' && view !== 'cart' && view !== 'checkout' && view !== 'success' && <div className="absolute inset-0 bg-premium-gradient z-0 transition-opacity duration-1000"></div>}
