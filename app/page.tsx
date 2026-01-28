@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Html5QrcodeScanner, Html5QrcodeSupportedFormats } from 'html5-qrcode';
 import { Utensils, Loader2, Check, CheckCircle2, Search, Filter, ChevronRight, Star, Leaf, Plus, Minus, X, ShoppingBag, ArrowLeft, Trash2, AlertCircle, Clock, ChefHat, Bell, WifiOff, Lock, RefreshCw, Send, ScanLine, Camera, Smartphone } from 'lucide-react';
@@ -1267,7 +1267,7 @@ const MenuContent = ({ cartCount, onOpenCart, cartTotal, addToCart }: any) => {
 }
 
 
-export default function App() {
+function AppContent() {
   const [view, setView] = useState<'scan' | 'landing' | 'confirmation' | 'menu' | 'cart' | 'checkout' | 'success'>('scan');
   const [session, setSession] = useState<Session | null>(null);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
@@ -1478,5 +1478,17 @@ export default function App() {
         {view === 'success' && <SuccessView activeOrder={activeOrder} onNewOrder={startNewOrder} onSubmitFeedback={submitFeedback} />}
       </main>
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center min-h-screen bg-slate-50 text-[#8D0B41]">
+        <Loader2 className="w-10 h-10 animate-spin" />
+      </div>
+    }>
+      <AppContent />
+    </Suspense>
   );
 }
