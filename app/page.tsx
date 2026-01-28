@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo, useRef, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { Html5QrcodeScanner, Html5QrcodeSupportedFormats } from 'html5-qrcode';
+import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode';
 import { Utensils, Loader2, Check, CheckCircle2, Search, Filter, ChevronRight, Star, Leaf, Plus, Minus, X, ShoppingBag, ArrowLeft, Trash2, AlertCircle, Clock, ChefHat, Bell, WifiOff, Lock, RefreshCw, Send, ScanLine, Camera, Smartphone } from 'lucide-react';
 
 // --- Configuration ---
@@ -263,53 +263,71 @@ const LandingView = ({ onComplete }: { onComplete: () => void }) => {
 const ScanQRView = ({ onScanSuccess, onCancel }: { onScanSuccess: (rId: string, tId: string) => void, onCancel?: () => void }) => {
   const [permissionError, setPermissionError] = useState(false);
   const [scanning, setScanning] = useState(false);
+  const scannerRef = useRef<Html5Qrcode | null>(null);
 
   useEffect(() => {
-    if (!scanning) return;
-
-    const scanner = new Html5QrcodeScanner(
-      "reader",
-      {
-        fps: 10,
-        qrbox: { width: 250, height: 250 },
-        aspectRatio: 1.0,
-        showTorchButtonIfSupported: true,
-        formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE]
-      },
-      false
-    );
-
-    const onScan = (decodedText: string) => {
-      // Parse URL parameters from decoded text
-      try {
-        const url = new URL(decodedText);
-        const params = new URLSearchParams(url.search);
-        const rId = params.get('restaurantId');
-        const tId = params.get('tableId');
-
-        if (rId && tId) {
-          scanner.clear().catch(console.error);
-          onScanSuccess(rId, tId);
-        } else {
-          // Handle invalid QR within the scanner flow if needed
-          // For now, we just ignore non-matching QRs or let user retry
-          console.warn("Invalid QR Content:", decodedText);
-        }
-      } catch (e) {
-        console.error("QR Parse Error", e);
+    return () => {
+      if (scannerRef.current) {
+        scannerRef.current.stop().catch(console.error);
       }
     };
+  }, []);
 
-    const onError = (errMsg: string) => {
-      // Html5QrcodeScanner throws frequent errors for "no QR found", ignore them
-    };
+  const startScanning = async () => {
+    setScanning(true);
+    setPermissionError(false);
 
-    scanner.render(onScan, onError);
+    try {
+      const scanner = new Html5Qrcode("reader");
+      scannerRef.current = scanner;
 
-    return () => {
-      scanner.clear().catch(console.error);
-    };
-  }, [scanning, onScanSuccess]);
+      await scanner.start(
+        { facingMode: "environment" },
+        {
+          fps: 10,
+          qrbox: { width: 250, height: 250 },
+          aspectRatio: 1.0,
+        },
+        (decodedText) => {
+          // Success callback
+          try {
+            const url = new URL(decodedText);
+            const params = new URLSearchParams(url.search);
+            const rId = params.get('restaurantId');
+            const tId = params.get('tableId');
+
+            if (rId && tId) {
+              scanner.stop().then(() => {
+                scannerRef.current = null;
+                onScanSuccess(rId, tId);
+              }).catch(console.error);
+            }
+          } catch (e) {
+            console.error("QR Parse Error", e);
+          }
+        },
+        (errorMessage) => {
+          // parse error, ignore
+        }
+      );
+    } catch (err) {
+      console.error("Error starting scanner", err);
+      setPermissionError(true);
+      setScanning(false);
+    }
+  };
+
+  const stopScanning = async () => {
+    if (scannerRef.current) {
+      try {
+        await scannerRef.current.stop();
+        scannerRef.current = null;
+      } catch (e) {
+        console.error("Failed to stop scanner", e);
+      }
+    }
+    setScanning(false);
+  };
 
   return (
     <div className="flex-1 flex flex-col justify-center items-center w-full max-w-md mx-auto h-full p-6 animate-fade-in relative z-20">
@@ -322,33 +340,40 @@ const ScanQRView = ({ onScanSuccess, onCancel }: { onScanSuccess: (rId: string, 
           <p className="text-gray-600 text-sm">Please scan the QR code on your table to access the menu.</p>
         </div>
 
-        {!scanning ? (
-          <div className="w-full space-y-4">
-            <button
-              onClick={() => setScanning(true)}
-              className="w-full bg-[#8D0B41] text-white py-4 rounded-xl font-medium shadow-lg shadow-[#8D0B41]/20 hover:bg-[#B01E58] active:scale-[0.98] transition-all flex items-center justify-center gap-2"
-            >
-              <Camera className="w-5 h-5" />
-              <span>Open Scanner</span>
-            </button>
-            <div className="text-center">
-              <p className="text-xs text-gray-400 uppercase tracking-widest my-3">or</p>
-              <p className="text-sm text-gray-500">
-                Use your phone's default camera app to scan the code.
-              </p>
-            </div>
-          </div>
-        ) : (
-          <div className="w-full flex flex-col items-center space-y-4">
-            <div id="reader" className="w-full overflow-hidden rounded-xl border-2 border-[#8D0B41]/20"></div>
-            <button
-              onClick={() => setScanning(false)}
-              className="text-[#8D0B41] text-sm font-semibold hover:underline"
-            >
-              Cancel Scan
-            </button>
+        {permissionError && (
+          <div className="bg-red-50 text-red-600 p-4 rounded-xl text-sm w-full text-center mb-4">
+            Camera permission denied. Please check your browser settings.
           </div>
         )}
+
+        <div className="w-full relative rounded-2xl overflow-hidden bg-black/5 min-h-[300px] flex flex-col items-center justify-center">
+          {/* The ID 'reader' is used by Html5Qrcode */}
+          <div id="reader" className="w-full h-full absolute inset-0"></div>
+
+          {!scanning && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center z-10 bg-gray-50/80 backdrop-blur-sm p-6 text-center space-y-4">
+              <p className="text-gray-500 text-sm">Camera access is needed to scan the QR code.</p>
+              <button
+                onClick={startScanning}
+                className="w-full bg-[#8D0B41] text-white py-3 px-6 rounded-xl font-medium shadow-lg shadow-[#8D0B41]/20 hover:bg-[#B01E58] active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+              >
+                <Camera className="w-5 h-5" />
+                <span>Start Camera</span>
+              </button>
+            </div>
+          )}
+
+          {scanning && (
+            <div className="absolute bottom-4 z-20">
+              <button
+                onClick={stopScanning}
+                className="bg-white/90 backdrop-blur text-[#8D0B41] px-4 py-2 rounded-full text-sm font-semibold shadow-md hover:bg-white"
+              >
+                Stop Scanning
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
