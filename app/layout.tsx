@@ -15,6 +15,11 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "TapTable",
   description: "Order from your table",
+  icons: {
+    icon: '/assets/taptable_icon.png',
+    shortcut: '/assets/taptable_icon.png',
+    apple: '/assets/taptable_icon.png',
+  },
 };
 
 export default function RootLayout({
