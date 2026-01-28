@@ -281,32 +281,41 @@ const ScanQRView = ({ onScanSuccess, onCancel }: { onScanSuccess: (rId: string, 
       const scanner = new Html5Qrcode("reader");
       scannerRef.current = scanner;
 
-      await scanner.start(
-        { facingMode: "environment" },
-        {
-          fps: 10,
-          qrbox: { width: 250, height: 250 },
-          aspectRatio: 1.0,
-        },
-        (decodedText) => {
-          try {
-            const url = new URL(decodedText);
-            const params = new URLSearchParams(url.search);
-            const rId = params.get('restaurantId');
-            const tId = params.get('tableId');
+      // Delay starting scanner until expansion animation completes (500ms)
+      setTimeout(async () => {
+        try {
+          await scanner.start(
+            { facingMode: "environment" },
+            {
+              fps: 10,
+              qrbox: { width: 250, height: 250 },
+              aspectRatio: 1.0,
+            },
+            (decodedText) => {
+              try {
+                const url = new URL(decodedText);
+                const params = new URLSearchParams(url.search);
+                const rId = params.get('restaurantId');
+                const tId = params.get('tableId');
 
-            if (rId && tId) {
-              scanner.stop().then(() => {
-                scannerRef.current = null;
-                onScanSuccess(rId, tId);
-              }).catch(console.error);
-            }
-          } catch (e) {
-            console.error("QR Parse Error", e);
-          }
-        },
-        (errorMessage) => { }
-      );
+                if (rId && tId) {
+                  scanner.stop().then(() => {
+                    scannerRef.current = null;
+                    onScanSuccess(rId, tId);
+                  }).catch(console.error);
+                }
+              } catch (e) {
+                console.error("QR Parse Error", e);
+              }
+            },
+            (errorMessage) => { }
+          );
+        } catch (innerErr) {
+          console.error("Error starting scanner delayed", innerErr);
+          setPermissionError(true);
+          setScanning(false);
+        }
+      }, 500);
     } catch (err) {
       console.error("Error starting scanner", err);
       setPermissionError(true);
@@ -355,67 +364,61 @@ const ScanQRView = ({ onScanSuccess, onCancel }: { onScanSuccess: (rId: string, 
           )}
 
           {/* Actual Camera Feed */}
-          <div id="reader" className="w-full h-full object-cover"></div>
+          {/* Actual Camera Feed */}
+          <div id="reader" className="w-full h-full object-cover rounded-[2rem] overflow-hidden"></div>
 
-          {/* Call to Action (Idle) */}
-          {!scanning && !permissionError && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-50/50 backdrop-blur-[2px] space-y-6">
-              <button
-                onClick={startScanning}
-                className="group relative px-8 py-4 bg-[#8D0B41] text-white rounded-2xl font-bold shadow-xl shadow-[#8D0B41]/25 hover:shadow-2xl hover:shadow-[#8D0B41]/40 hover:scale-105 active:scale-95 transition-all overflow-hidden"
-              >
-                <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
-                <div className="relative flex items-center gap-3">
-                  <Camera className="w-5 h-5" />
-                  <span className="tracking-wide">Enable Camera</span>
-                </div>
-              </button>
-
-              <div className="flex flex-col items-center space-y-3 animate-fade-in delay-200">
-                <div className="flex items-center gap-3 w-32 opacity-40">
-                  <div className="h-[1px] bg-black flex-1"></div>
-                  <span className="text-[10px] font-bold text-black uppercase tracking-widest">OR</span>
-                  <div className="h-[1px] bg-black flex-1"></div>
-                </div>
-                <p className="text-sm font-medium text-gray-500">Use your phone's native camera</p>
+          {/* Call to Action (Transition Group) */}
+          <div className={`absolute inset-0 flex flex-col items-center justify-center bg-gray-50/50 backdrop-blur-[2px] space-y-6 transition-all duration-500 z-20 ${scanning ? 'opacity-0 pointer-events-none scale-95' : 'opacity-100 scale-100'}`}>
+            <button
+              onClick={startScanning}
+              className="group relative px-8 py-4 bg-[#8D0B41] text-white rounded-2xl font-bold shadow-xl shadow-[#8D0B41]/25 hover:shadow-2xl hover:shadow-[#8D0B41]/40 hover:scale-105 active:scale-95 transition-all overflow-hidden"
+            >
+              <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
+              <div className="relative flex items-center gap-3">
+                <Camera className="w-5 h-5" />
+                <span className="tracking-wide">Enable Camera</span>
               </div>
+            </button>
+
+            <div className="flex flex-col items-center space-y-3">
+              <div className="flex items-center gap-3 w-32 opacity-40">
+                <div className="h-[1px] bg-black flex-1"></div>
+                <span className="text-[10px] font-bold text-black uppercase tracking-widest">OR</span>
+                <div className="h-[1px] bg-black flex-1"></div>
+              </div>
+              <p className="text-sm font-medium text-gray-500">Use your phone's native camera</p>
             </div>
-          )}
+          </div>
 
           {/* Viewfinder Overlay (Scanning) */}
-          {scanning && (
-            <div className="absolute inset-0 pointer-events-none z-10 flex flex-col items-center justify-center">
+          <div className={`absolute inset-0 pointer-events-none z-30 flex flex-col items-center justify-center transition-opacity duration-1000 ${scanning ? 'opacity-100 delay-500' : 'opacity-0'}`}>
+            {/* Scanning Frame with Shadow Hole */}
+            <div className="relative w-64 h-64 border border-white/20 rounded-3xl shadow-[0_0_0_100vmax_rgba(0,0,0,0.5)]">
+              {/* Corner Markers */}
+              <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-[#8D0B41] rounded-tl-xl -translate-x-1 -translate-y-1"></div>
+              <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-[#8D0B41] rounded-tr-xl translate-x-1 -translate-y-1"></div>
+              <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-[#8D0B41] rounded-bl-xl -translate-x-1 translate-y-1"></div>
+              <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-[#8D0B41] rounded-br-xl translate-x-1 translate-y-1"></div>
 
-              {/* Scanning Frame with Shadow Hole */}
-              <div className="relative w-64 h-64 border border-white/20 rounded-3xl shadow-[0_0_0_100vmax_rgba(0,0,0,0.5)]">
-                {/* Corner Markers */}
-                <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-[#8D0B41] rounded-tl-xl -translate-x-1 -translate-y-1"></div>
-                <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-[#8D0B41] rounded-tr-xl translate-x-1 -translate-y-1"></div>
-                <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-[#8D0B41] rounded-bl-xl -translate-x-1 translate-y-1"></div>
-                <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-[#8D0B41] rounded-br-xl translate-x-1 translate-y-1"></div>
+              {/* Laser */}
+              <div className="absolute left-2 right-2 h-0.5 bg-gradient-to-r from-transparent via-red-500 to-transparent shadow-[0_0_15px_rgba(255,0,0,0.8)] animate-laser"></div>
 
-                {/* Laser */}
-                <div className="absolute left-2 right-2 h-0.5 bg-gradient-to-r from-transparent via-red-500 to-transparent shadow-[0_0_15px_rgba(255,0,0,0.8)] animate-laser"></div>
-
-                <div className="absolute -bottom-12 left-0 right-0 text-center">
-                  <p className="text-white/90 text-sm font-medium tracking-wider shadow-sm backdrop-blur-md bg-black/20 py-1 px-3 rounded-full inline-block">Align QR code within frame</p>
-                </div>
+              <div className="absolute -bottom-12 left-0 right-0 text-center">
+                <p className="text-white/90 text-sm font-medium tracking-wider shadow-sm backdrop-blur-md bg-black/20 py-1 px-3 rounded-full inline-block">Align QR code within frame</p>
               </div>
             </div>
-          )}
+          </div>
 
           {/* Cancel Button (Scanning) */}
-          {scanning && (
-            <div className="absolute bottom-6 left-0 right-0 flex justify-center z-20">
-              <button
-                onClick={stopScanning}
-                className="bg-white/10 backdrop-blur-md border border-white/20 text-white px-6 py-2.5 rounded-full text-sm font-semibold hover:bg-white/20 transition-all active:scale-95 flex items-center gap-2"
-              >
-                <X className="w-4 h-4" />
-                <span>Cancel</span>
-              </button>
-            </div>
-          )}
+          <div className={`absolute bottom-6 left-0 right-0 flex justify-center z-40 transition-all duration-300 ${scanning ? 'opacity-100 translate-y-0 delay-300' : 'opacity-0 translate-y-4 pointer-events-none'}`}>
+            <button
+              onClick={stopScanning}
+              className="bg-white/10 backdrop-blur-md border border-white/20 text-white px-6 py-2.5 rounded-full text-sm font-semibold hover:bg-white/20 transition-all active:scale-95 flex items-center gap-2"
+            >
+              <X className="w-4 h-4" />
+              <span>Cancel</span>
+            </button>
+          </div>
         </div>
       </div>
 
