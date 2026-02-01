@@ -254,7 +254,7 @@ const LandingView = ({ onComplete }: { onComplete: () => void }) => {
           </button>
           <p className="text-center text-xs text-gray-500 leading-relaxed">By continuing, you agree to our<br /><a href="#" className="underline decoration-gray-300 hover:text-[#8D0B41] transition-colors">Terms of Service</a></p>
         </div>
-        <div className="mt-6 text-center opacity-40 hover:opacity-100 transition-opacity duration-300"><span className="text-[10px] tracking-widest uppercase text-gray-400">Powered by TapTable</span></div>
+        <div className="mt-6 text-center opacity-40 hover:opacity-100 transition-opacity duration-300"><span className="text-[10px] tracking-widest uppercase text-gray-400">Powered by DineStack</span></div>
       </div>
     </div>
   );
@@ -424,7 +424,7 @@ const ScanQRView = ({ onScanSuccess, onCancel }: { onScanSuccess: (rId: string, 
 
       {!scanning && (
         <div className="mt-8 text-center opacity-60">
-          <p className="text-[10px] uppercase tracking-[0.2em] text-[#5A0528]">Powered by TapTable</p>
+          <p className="text-[10px] uppercase tracking-[0.2em] text-[#5A0528]">Powered by DineStack</p>
         </div>
       )}
     </div>
@@ -1387,8 +1387,8 @@ function AppContent() {
   useEffect(() => {
     if (!session) return;
 
-    const savedCart = localStorage.getItem(`taptable_cart_${session.tableId}`);
-    const savedOrder = localStorage.getItem(`taptable_order_${session.tableId}`);
+    const savedCart = localStorage.getItem(`dinestack_cart_${session.tableId}`);
+    const savedOrder = localStorage.getItem(`dinestack_order_${session.tableId}`);
 
     if (savedCart) {
       try { setCartItems(JSON.parse(savedCart)); } catch (e) { console.error(e); }
@@ -1409,16 +1409,16 @@ function AppContent() {
 
   useEffect(() => {
     if (restored && session) {
-      localStorage.setItem(`taptable_cart_${session.tableId}`, JSON.stringify(cartItems));
+      localStorage.setItem(`dinestack_cart_${session.tableId}`, JSON.stringify(cartItems));
     }
   }, [cartItems, restored, session]);
 
   useEffect(() => {
     if (restored && session) {
       if (activeOrder) {
-        localStorage.setItem(`taptable_order_${session.tableId}`, JSON.stringify(activeOrder));
+        localStorage.setItem(`dinestack_order_${session.tableId}`, JSON.stringify(activeOrder));
       } else {
-        localStorage.removeItem(`taptable_order_${session.tableId}`);
+        localStorage.removeItem(`dinestack_order_${session.tableId}`);
       }
     }
   }, [activeOrder, restored, session]);

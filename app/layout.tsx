@@ -13,12 +13,12 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "TapTable",
+  title: "DineStack",
   description: "Order from your table",
   icons: {
-    icon: '/assets/taptable_icon.png',
-    shortcut: '/assets/taptable_icon.png',
-    apple: '/assets/taptable_icon.png',
+    icon: '/assets/dinestack_icon.png',
+    shortcut: '/assets/dinestack_icon.png',
+    apple: '/assets/dinestack_icon.png',
   },
 };
 
