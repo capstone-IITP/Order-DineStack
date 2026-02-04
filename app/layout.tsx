@@ -16,9 +16,9 @@ export const metadata: Metadata = {
   title: "DineStack",
   description: "Order from your table",
   icons: {
-    icon: '/assets/dinestack_icon.png',
-    shortcut: '/assets/dinestack_icon.png',
-    apple: '/assets/dinestack_icon.png',
+    icon: '/assets/DineStack Bg Remove.png',
+    shortcut: '/assets/DineStack Bg Remove.png',
+    apple: '/assets/DineStack Bg Remove.png',
   },
 };
 
