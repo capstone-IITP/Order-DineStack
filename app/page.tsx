@@ -1,4 +1,4 @@
-  "use client";
+"use client";
 
 import React, { useState, useEffect, useMemo, useRef, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
@@ -1357,8 +1357,8 @@ function AppContent() {
   // Initial Session Handling & URL Parsing
   useEffect(() => {
     // Check for session initialization via URL
-    const rId = searchParams.get('restaurantId');
-    const tId = searchParams.get('tableId');
+    const rId = searchParams.get('restaurantId') || searchParams.get('r');
+    const tId = searchParams.get('tableId') || searchParams.get('t');
 
     if (rId && tId) {
       validateSession(rId, tId).then(valid => {
