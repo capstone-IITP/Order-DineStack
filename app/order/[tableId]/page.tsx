@@ -1,23 +1,23 @@
 "use client";
 
-import React, { useEffect, useState, useMemo, Suspense } from 'react';
+import React, { useEffect, useState, useMemo, Suspense, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ShoppingBag, Minus, Plus, AlertCircle, CheckCircle2, Loader2, Utensils, ChefHat, Search, ArrowRight } from 'lucide-react';
+import { ShoppingBag, Minus, Plus, AlertCircle, CheckCircle2, Loader2, Utensils, ChefHat, Search, ArrowRight, ArrowLeft, Star } from 'lucide-react';
 import { getTableInfo, placeOrder, SessionData, Category, MenuItem } from '@/lib/api';
 import Image from 'next/image';
 
-// Premium Theme Colors & Styles
+// Delivery App Style Theme
 const theme = {
-    background: 'radial-gradient(circle at top center, #8A1538 0%, #FFF0F5 40%, #FFFFFF 100%)',
-    primary: '#8A1538',
-    primaryDark: '#6D0F2E',
-    secondary: '#D4AF37', // Gold accent
-    text: '#2D1810',
-    textLight: '#6B5B56',
+    background: '#F9F9F9',
+    primary: '#8A1538', // Burgundy/Maroon BRAND color
+    textPrimary: '#333333',
+    textSecondary: '#666666',
     white: '#FFFFFF',
-    surface: 'rgba(255, 255, 255, 0.85)',
-    surfaceHover: 'rgba(255, 255, 255, 0.95)',
-    glass: 'backdrop-blur-md bg-white/70 shadow-xl border border-white/40',
+    border: '#E0E0E0',
+    success: '#2D9F5D',
+    activePill: '#8A1538',
+    inactivePill: '#FFFFFF',
+    danger: '#D32F2F'
 };
 
 interface CartItem extends MenuItem {
@@ -26,7 +26,10 @@ interface CartItem extends MenuItem {
 
 function OrderContent() {
     const params = useParams();
+    const router = useRouter();
     const tableId = params.tableId as string;
+    const categoryRefs = useRef<{ [key: string]: HTMLElement | null }>({});
+    const navRef = useRef<HTMLDivElement>(null);
 
     // State
     const [loading, setLoading] = useState(true);
@@ -37,6 +40,7 @@ function OrderContent() {
     const [placingOrder, setPlacingOrder] = useState(false);
     const [orderSuccess, setOrderSuccess] = useState<string | null>(null);
     const [activeCategory, setActiveCategory] = useState<string>("");
+    const [scrolled, setScrolled] = useState(false);
 
     const cartTotal = useMemo(() => {
         return cart.reduce((total, item) => total + (item.price * item.quantity), 0);
@@ -80,32 +84,58 @@ function OrderContent() {
         loadData();
     }, [tableId]);
 
-    // Scroll Spy for Active Category
+    // Header scroll background effect
     useEffect(() => {
         const handleScroll = () => {
-            const sections = document.querySelectorAll('section[id]');
+            setScrolled(window.scrollY > 20);
+
+            // Scroll Spy
             let current = "";
-            sections.forEach(section => {
-                const top = (section as HTMLElement).offsetTop;
-                if (window.scrollY >= top - 200) {
-                    current = section.getAttribute('id') || "";
+            const offset = 140; // Approx header height + nav height
+
+            // simple logic: find the section closest to top
+            for (const cat of menu) {
+                const element = categoryRefs.current[cat.id];
+                if (element) {
+                    const rect = element.getBoundingClientRect();
+                    if (rect.top <= offset + 50 && rect.bottom > offset) {
+                        current = cat.id;
+                        break; // Found the active one
+                    }
                 }
-            });
-            if (current) setActiveCategory(current);
+            }
+            if (current && current !== activeCategory) {
+                setActiveCategory(current);
+                // Also scroll nav to active pill found via scroll
+                scrollNavToCategory(current);
+            }
         };
+
         window.addEventListener('scroll', handleScroll);
         return () => window.removeEventListener('scroll', handleScroll);
-    }, [menu]);
+    }, [menu, activeCategory]);
+
+    const scrollNavToCategory = (categoryId: string) => {
+        if (!navRef.current) return;
+        const pill = navRef.current.querySelector(`[data-category="${categoryId}"]`) as HTMLElement;
+        if (pill) {
+            pill.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+        }
+    }
 
     // Handlers
     const scrollToCategory = (categoryId: string) => {
-        const element = document.getElementById(categoryId);
+        setActiveCategory(categoryId);
+        const element = categoryRefs.current[categoryId];
         if (element) {
+            const headerOffset = 130;
+            const elementPosition = element.getBoundingClientRect().top;
+            const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+
             window.scrollTo({
-                top: element.offsetTop - 180,
+                top: offsetPosition,
                 behavior: 'smooth'
             });
-            setActiveCategory(categoryId);
         }
     };
 
@@ -164,21 +194,19 @@ function OrderContent() {
         }
     };
 
+    // Helper: Image Placeholder
+    const ImagePlaceholder = () => (
+        <div className="w-full h-full flex items-center justify-center bg-[#F5F5F5] text-gray-400">
+            <Utensils size={24} strokeWidth={1.5} />
+        </div>
+    );
+
     // Loading State
     if (loading) {
         return (
-            <div className="flex flex-col items-center justify-center min-h-screen relative overflow-hidden">
-                <div className="absolute inset-0 z-0" style={{ background: theme.background }} />
-                <div className="relative z-10 flex flex-col items-center">
-                    <div className="w-20 h-20 rounded-full flex items-center justify-center mb-6 shadow-2xl animate-pulse"
-                        style={{ background: `linear-gradient(135deg, ${theme.primary}, ${theme.primaryDark})` }}>
-                        <ChefHat className="w-10 h-10 text-white" />
-                    </div>
-                    <Loader2 className="w-8 h-8 animate-spin mb-4 text-purple-900" />
-                    <p className="font-serif text-xl tracking-wide text-purple-950/80">
-                        Curating your experience...
-                    </p>
-                </div>
+            <div className="flex flex-col items-center justify-center min-h-screen bg-[#F9F9F9]">
+                <Loader2 className="w-8 h-8 animate-spin text-[#8A1538] mb-3" />
+                <p className="font-medium text-gray-500">Loading Menu...</p>
             </div>
         );
     }
@@ -186,99 +214,112 @@ function OrderContent() {
     // Error State
     if (error) {
         return (
-            <div className="flex flex-col items-center justify-center min-h-screen p-6 text-center relative overflow-hidden">
-                <div className="absolute inset-0 z-0" style={{ background: theme.background }} />
-                <div className="relative z-10 bg-white/80 backdrop-blur-xl p-8 rounded-3xl shadow-2xl max-w-sm w-full border border-white/50">
-                    <div className="w-16 h-16 rounded-full flex items-center justify-center mb-4 mx-auto bg-red-50 text-red-500">
-                        <AlertCircle className="w-8 h-8" />
-                    </div>
-                    <h2 className="text-2xl font-serif font-bold mb-3 text-gray-900">
-                        Unable to Load Menu
-                    </h2>
-                    <p className="mb-8 text-gray-600 leading-relaxed font-sans">
-                        {error}
-                    </p>
-                    <button
-                        onClick={() => window.location.reload()}
-                        className="w-full py-4 rounded-xl font-bold text-white shadow-lg transition-all hover:scale-[1.02] active:scale-95"
-                        style={{ background: `linear-gradient(to right, ${theme.primary}, ${theme.primaryDark})` }}
-                    >
-                        Try Again
-                    </button>
+            <div className="flex flex-col items-center justify-center min-h-screen p-6 text-center bg-[#F9F9F9]">
+                <div className="w-16 h-16 rounded-full bg-red-50 flex items-center justify-center mb-4 text-[#D32F2F]">
+                    <AlertCircle className="w-8 h-8" />
                 </div>
+                <h3 className="text-lg font-bold text-gray-800 mb-2">Unavailable</h3>
+                <p className="text-gray-500 mb-6 max-w-xs">{error}</p>
+                <button
+                    onClick={() => window.location.reload()}
+                    className="px-6 py-3 rounded-lg font-bold text-white bg-[#8A1538]"
+                >
+                    Retry
+                </button>
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen pb-32 font-sans selection:bg-pink-200" style={{ background: theme.background }}>
+        <div className="min-h-screen pb-28 font-sans" style={{ backgroundColor: theme.background }}>
 
-            {/* Hero Header */}
-            <header className="relative pt-12 pb-20 px-6 text-center overflow-hidden">
-                <div className="relative z-10 flex flex-col items-center animate-in slide-in-from-top-10 duration-700">
-                    <div className="w-16 h-16 rounded-2xl flex items-center justify-center shadow-2xl mb-5 transform rotate-3 hover:rotate-0 transition-all duration-500"
-                        style={{ background: `linear-gradient(135deg, ${theme.primary}, ${theme.primaryDark})` }}>
-                        <ChefHat className="w-8 h-8 text-white drop-shadow-md" />
+            {/* 1. Header Section */}
+            <header
+                className={`sticky top-0 z-50 transition-all duration-200 border-b border-transparent ${scrolled ? 'bg-white shadow-sm border-gray-100' : 'bg-[#F9F9F9]'}`}
+            >
+                {/* Top Row: Restaurant Info & Table Badge */}
+                <div className="px-4 py-3 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        {/* Optional Back Button */}
+                        {/* <button className="p-1.5 -ml-2 rounded-full hover:bg-black/5">
+                            <ArrowLeft size={22} className="text-gray-700" />
+                        </button> */}
+
+                        <div className="flex items-center gap-2.5">
+                            <div className="w-10 h-10 rounded-lg bg-white shadow-sm border border-gray-100 flex items-center justify-center text-[#8A1538]">
+                                <ChefHat size={20} fill="#8A1538" className="text-[#8A1538]" />
+                            </div>
+                            <div className="flex flex-col">
+                                <h1 className="text-lg font-bold text-[#333] leading-tight line-clamp-1">
+                                    {session?.restaurant.name || 'Restaurant'}
+                                </h1>
+                                <span className="text-xs text-gray-500">
+                                    Fine Dining • North Indian
+                                </span>
+                            </div>
+                        </div>
                     </div>
-                    <h1 className="text-3xl font-serif font-black tracking-tight mb-2 text-gray-900">
-                        {session?.restaurant.name || 'Fine Dining'}
-                    </h1>
-                    <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/40 border border-white/50 backdrop-blur-md shadow-sm">
-                        <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                        <span className="text-sm font-medium text-gray-700">
-                            Table {session?.table.number || '01'}
+
+                    {/* Table Badge */}
+                    <div className="flex items-center gap-1 bg-[#E8F5E9] border border-[#C8E6C9] px-2.5 py-1 rounded-md">
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#2D9F5D] animate-pulse" />
+                        <span className="text-xs font-bold text-[#1B5E20] uppercase tracking-wide">
+                            Table {session?.table.number}
                         </span>
+                    </div>
+                </div>
+
+                {/* 2. Category Pills (Horizontal Scroll) */}
+                <div className="px-4 pb-3 pt-1 w-full overflow-x-hidden">
+                    <div
+                        ref={navRef}
+                        className="flex gap-2.5 overflow-x-auto scrollbar-hide pb-1"
+                    >
+                        {menu.map((category) => {
+                            const isActive = activeCategory === category.id;
+                            return (
+                                <button
+                                    key={category.id}
+                                    data-category={category.id}
+                                    onClick={() => scrollToCategory(category.id)}
+                                    className={`flex-none px-4 py-2 rounded-full text-sm font-semibold transition-all whitespace-nowrap border
+                                        ${isActive
+                                            ? 'bg-[#333] text-white border-[#333] shadow-md transform scale-[1.02]'
+                                            : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
+                                        }`}
+                                >
+                                    {category.name}
+                                </button>
+                            );
+                        })}
                     </div>
                 </div>
             </header>
 
-            {/* Sticky Category Nav */}
-            <div className="sticky top-4 z-40 mb-8 mx-4">
-                <nav className="flex gap-3 overflow-x-auto pb-4 pt-2 px-1 scrollbar-hide snap-x"
-                    style={{ maskImage: 'linear-gradient(to right, transparent, black 10%, black 90%, transparent)' }}>
-                    {menu.map((category) => (
-                        <button
-                            key={category.id}
-                            onClick={() => scrollToCategory(category.id)}
-                            className={`flex-none px-6 py-2.5 rounded-full text-sm font-bold tracking-wide transition-all duration-300 shadow-sm snap-center
-                                ${activeCategory === category.id
-                                    ? 'text-white shadow-lg transform scale-105'
-                                    : 'bg-white/70 text-gray-600 hover:bg-white/90'
-                                }`}
-                            style={{
-                                background: activeCategory === category.id
-                                    ? `linear-gradient(to right, ${theme.primary}, ${theme.primaryDark})`
-                                    : undefined
-                            }}
-                        >
-                            {category.name}
-                        </button>
-                    ))}
-                </nav>
-            </div>
-
-            {/* Main Menu Grid */}
-            <main className="px-5 space-y-12 max-w-xl mx-auto">
+            {/* 3. Menu Items List */}
+            <main className="px-4 py-2 space-y-6">
                 {menu.map((category) => (
-                    <section key={category.id} id={category.id} className="scroll-mt-48">
-                        <div className="flex items-center gap-4 mb-6">
-                            <h2 className="text-2xl font-serif font-bold text-gray-900 leading-none">
-                                {category.name}
-                            </h2>
-                            <div className="h-px flex-1 bg-gradient-to-r from-pink-200 to-transparent" />
-                        </div>
+                    <section
+                        key={category.id}
+                        id={category.id}
+                        ref={(el) => { categoryRefs.current[category.id] = el }}
+                        className="scroll-mt-36"
+                    >
+                        <h2 className="text-lg font-bold text-[#333] mb-3 px-1">
+                            {category.name}
+                        </h2>
 
-                        <div className="space-y-6">
+                        <div className="space-y-4">
                             {category.items.map((item) => {
                                 const qty = getItemQuantity(item.id);
                                 return (
                                     <div
                                         key={item.id}
-                                        className="group relative bg-white/60 backdrop-blur-md rounded-3xl p-3 shadow-sm hover:shadow-xl hover:bg-white/80 transition-all duration-500 border border-white/50"
+                                        className="bg-white rounded-xl p-3 shadow-sm border border-gray-100 w-full"
                                     >
-                                        <div className="flex gap-4">
-                                            {/* Image */}
-                                            <div className="w-28 h-28 rounded-2xl flex-shrink-0 relative overflow-hidden bg-gray-100 shadow-inner group-hover:scale-105 transition-transform duration-500">
+                                        <div className="flex gap-3">
+                                            {/* Left: Image (Square 96x96) */}
+                                            <div className="relative w-24 h-24 rounded-lg overflow-hidden flex-shrink-0 border border-gray-100">
                                                 {item.image ? (
                                                     <Image
                                                         src={item.image}
@@ -287,63 +328,66 @@ function OrderContent() {
                                                         className="object-cover"
                                                     />
                                                 ) : (
-                                                    <div className="w-full h-full flex items-center justify-center opacity-20">
-                                                        <Utensils className="w-8 h-8 text-gray-500" />
-                                                    </div>
+                                                    <ImagePlaceholder />
                                                 )}
                                                 {!item.isAvailable && (
-                                                    <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px] flex items-center justify-center">
-                                                        <span className="text-white text-xs font-bold px-2 py-1 rounded border border-white/30 truncate">
+                                                    <div className="absolute inset-0 bg-white/80 backdrop-blur-[1px] flex items-center justify-center p-1 text-center">
+                                                        <span className="text-[10px] font-bold text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded border border-gray-200">
                                                             SOLD OUT
                                                         </span>
                                                     </div>
                                                 )}
                                             </div>
 
-                                            {/* Content */}
-                                            <div className="flex-1 flex flex-col justify-between py-1 min-w-0">
+                                            {/* Right: Details */}
+                                            <div className="flex-1 flex flex-col justify-between py-0.5 min-w-0">
                                                 <div>
-                                                    <h3 className="font-serif font-bold text-lg text-gray-900 truncate pr-2">
-                                                        {item.name}
-                                                    </h3>
-                                                    <p className="text-sm text-gray-500 line-clamp-2 mt-1 leading-relaxed">
-                                                        {item.description}
+                                                    <div className="flex items-start justify-between gap-1">
+                                                        <h3 className="font-bold text-[16px] text-[#333] leading-snug line-clamp-2">
+                                                            {item.name}
+                                                        </h3>
+                                                    </div>
+                                                    <p className="text-[13px] text-gray-500 mt-1 line-clamp-2 leading-relaxed">
+                                                        {item.description || "Freshly prepared with authentic ingredients."}
                                                     </p>
                                                 </div>
 
-                                                <div className="flex items-end justify-between mt-3">
-                                                    <span className="font-sans font-bold text-lg text-rose-900">
+                                                <div className="flex items-center justify-between mt-2.5">
+                                                    <span className="font-bold text-[16px] text-[#333]">
                                                         ₹{item.price}
                                                     </span>
 
-                                                    {qty === 0 ? (
-                                                        <button
-                                                            onClick={() => addToCart(item)}
-                                                            disabled={!item.isAvailable}
-                                                            className="w-8 h-8 rounded-full flex items-center justify-center transition-all active:scale-95 disabled:opacity-50 disabled:grayscale"
-                                                            style={{ background: theme.primary }}
-                                                        >
-                                                            <Plus className="w-5 h-5 text-white" />
-                                                        </button>
-                                                    ) : (
-                                                        <div className="flex items-center bg-gray-900 rounded-full h-8 px-1 shadow-lg">
-                                                            <button
-                                                                onClick={() => removeFromCart(item.id)}
-                                                                className="w-7 h-full flex items-center justify-center text-white/90 hover:text-white active:scale-75 transition-all"
-                                                            >
-                                                                <Minus size={14} />
-                                                            </button>
-                                                            <span className="w-4 text-center font-bold text-white text-sm">
-                                                                {qty}
-                                                            </span>
+                                                    {/* Add Button Area */}
+                                                    <div className="relative z-10">
+                                                        {qty === 0 ? (
                                                             <button
                                                                 onClick={() => addToCart(item)}
-                                                                className="w-7 h-full flex items-center justify-center text-white/90 hover:text-white active:scale-75 transition-all"
+                                                                disabled={!item.isAvailable}
+                                                                className="w-8 h-8 rounded-full flex items-center justify-center shadow-md active:scale-95 transition-all text-white disabled:opacity-50 disabled:grayscale"
+                                                                style={{ backgroundColor: theme.primary }}
                                                             >
-                                                                <Plus size={14} />
+                                                                <Plus size={18} strokeWidth={3} />
                                                             </button>
-                                                        </div>
-                                                    )}
+                                                        ) : (
+                                                            <div className="flex items-center h-8 bg-white border border-gray-200 rounded-full shadow-sm overflow-hidden">
+                                                                <button
+                                                                    onClick={() => removeFromCart(item.id)}
+                                                                    className="w-8 h-full flex items-center justify-center text-[#8A1538] hover:bg-red-50 active:bg-red-100 transition-colors"
+                                                                >
+                                                                    <Minus size={16} strokeWidth={3} />
+                                                                </button>
+                                                                <span className="min-w-[20px] text-center font-bold text-sm text-[#333]">
+                                                                    {qty}
+                                                                </span>
+                                                                <button
+                                                                    onClick={() => addToCart(item)}
+                                                                    className="w-8 h-full flex items-center justify-center text-[#8A1538] hover:bg-red-50 active:bg-red-100 transition-colors"
+                                                                >
+                                                                    <Plus size={16} strokeWidth={3} />
+                                                                </button>
+                                                            </div>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
@@ -355,50 +399,44 @@ function OrderContent() {
                 ))}
 
                 {menu.length > 0 && (
-                    <div className="pt-8 pb-12 text-center">
-                        <div className="w-2 h-2 rounded-full bg-rose-200 mx-auto mb-2" />
-                        <p className="text-xs font-serif italic text-rose-900/40">
+                    <div className="py-8 text-center">
+                        <div className="w-12 h-[1px] bg-gray-300 mx-auto mb-3" />
+                        <p className="text-xs text-gray-400 font-medium tracking-wide uppercase">
                             End of Menu
+                        </p>
+                        <p className="text-[10px] text-gray-300 mt-1">
+                            Powered by DineStack
                         </p>
                     </div>
                 )}
             </main>
 
-            {/* Smart Cart FAB */}
+            {/* 4. Sticky Cart Bar */}
             {cartItemCount > 0 && (
-                <div className="fixed bottom-0 left-0 right-0 p-4 z-50 pointer-events-none">
-                    <div className="max-w-md mx-auto pointer-events-auto">
+                <div className="fixed bottom-0 left-0 right-0 z-50 p-4 bg-gradient-to-t from-white via-white to-transparent pb-6">
+                    <div className="max-w-md mx-auto">
                         <button
                             onClick={handlePlaceOrder}
                             disabled={placingOrder}
-                            className="w-full group relative overflow-hidden rounded-2xl p-4 shadow-2xl transition-all active:scale-[0.98]"
+                            className="w-full relative overflow-hidden rounded-xl shadow-lg transition-transform active:scale-[0.98] flex items-center justify-between p-0 bg-[#8A1538]"
                         >
-                            <div className="absolute inset-0 z-0 bg-gray-900" />
+                            {/* Left: Item Count & Price */}
+                            <div className="flex flex-col justify-center px-5 py-3.5 bg-[#6D0F2E]/30 h-full border-r border-white/10">
+                                <span className="text-[11px] font-medium text-white/80 uppercase tracking-wider">
+                                    {cartItemCount} {cartItemCount === 1 ? 'ITEM' : 'ITEMS'}
+                                </span>
+                                <span className="text-lg font-bold text-white leading-none mt-0.5">
+                                    ₹{cartTotal.toFixed(0)}
+                                </span>
+                            </div>
 
-                            {/* Gradient glow effect */}
-                            <div className="absolute -inset-1 bg-gradient-to-r from-pink-600 via-rose-500 to-amber-500 opacity-20 blur-lg group-hover:opacity-40 transition-opacity" />
-
-                            <div className="relative z-10 flex items-center justify-between">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center border border-white/10 backdrop-blur-sm">
-                                        <span className="font-bold text-white text-lg">{cartItemCount}</span>
-                                    </div>
-                                    <div className="text-left">
-                                        <p className="text-white/60 text-xs font-medium uppercase tracking-wider">Total</p>
-                                        <p className="text-white font-bold text-lg leading-none">₹{cartTotal.toFixed(0)}</p>
-                                    </div>
-                                </div>
-
-                                <div className="flex items-center gap-2 pl-6 pr-2">
-                                    <span className="text-white font-bold text-lg tracking-wide">
-                                        {placingOrder ? 'Sending...' : 'Place Order'}
-                                    </span>
-                                    {placingOrder ? (
-                                        <Loader2 className="w-5 h-5 text-white/80 animate-spin" />
-                                    ) : (
-                                        <ArrowRight className="w-5 h-5 text-white/80 group-hover:translate-x-1 transition-transform" />
-                                    )}
-                                </div>
+                            {/* Right: Action Text */}
+                            <div className="flex-1 flex items-center justify-center gap-2 pr-2">
+                                <span className="font-bold text-white text-[16px] tracking-wide">
+                                    {placingOrder ? 'Sending Order...' : 'Place Order'}
+                                </span>
+                                {!placingOrder && <ArrowRight size={18} className="text-white" strokeWidth={3} />}
+                                {placingOrder && <Loader2 size={18} className="text-white animate-spin" />}
                             </div>
                         </button>
                     </div>
@@ -407,14 +445,14 @@ function OrderContent() {
 
             {/* Order Success Toast */}
             {orderSuccess && (
-                <div className="fixed top-8 left-1/2 -translate-x-1/2 z-[100] w-full max-w-xs animate-in slide-in-from-top-4 fade-in">
-                    <div className="bg-emerald-500 text-white px-5 py-4 rounded-2xl shadow-2xl flex items-center gap-4 border border-emerald-400/50 backdrop-blur-md">
-                        <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center shrink-0">
-                            <CheckCircle2 className="w-6 h-6 text-white" />
+                <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[60] w-[90%] max-w-sm animate-in slide-in-from-top-4 fade-in duration-300">
+                    <div className="bg-[#2D9F5D] text-white px-4 py-3 rounded-xl shadow-xl flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center shrink-0">
+                            <CheckCircle2 size={18} className="text-white" />
                         </div>
                         <div>
-                            <h4 className="font-bold text-lg leading-none">Order Sent!</h4>
-                            <p className="text-emerald-50 text-sm mt-1">Order #{orderSuccess} placed</p>
+                            <h4 className="font-bold text-sm">Order Sent Successfully!</h4>
+                            <p className="text-white/90 text-xs mt-0.5">Order #{orderSuccess} has been placed.</p>
                         </div>
                     </div>
                 </div>
@@ -426,8 +464,8 @@ function OrderContent() {
 export default function TableOrderPage() {
     return (
         <Suspense fallback={
-            <div className="flex flex-col justify-center items-center min-h-screen bg-rose-50">
-                <Loader2 className="animate-spin w-10 h-10 text-rose-900" />
+            <div className="flex flex-col justify-center items-center min-h-screen bg-[#F9F9F9]">
+                <Loader2 className="animate-spin w-8 h-8 text-[#8A1538]" />
             </div>
         }>
             <OrderContent />
