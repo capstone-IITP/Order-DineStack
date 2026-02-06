@@ -54,7 +54,20 @@ export interface Category {
 export const initSession = async (restaurantId: string, tableId: string): Promise<SessionData> => {
     try {
         const response = await api.post('/customer/session/init', { restaurantId, tableId });
-        const sessionData = response.data;
+        const data = response.data;
+
+        // Transform backend response to match expected SessionData format
+        const sessionData: SessionData = {
+            token: data.token,
+            restaurant: {
+                id: restaurantId,
+                name: data.restaurantName || 'Restaurant',
+            },
+            table: {
+                id: tableId,
+                number: data.tableNumber || tableId.substring(0, 4).toUpperCase(),
+            },
+        };
 
         if (sessionData.token) {
             localStorage.setItem('customerToken', sessionData.token);
@@ -71,7 +84,23 @@ export const initSession = async (restaurantId: string, tableId: string): Promis
 export const getMenu = async (restaurantId: string): Promise<Category[]> => {
     try {
         const response = await api.get(`/customer/menu/${restaurantId}`);
-        return response.data;
+        // Backend returns { success: true, categories: [...] }
+        const categories = response.data.categories || [];
+
+        // Map backend property names to frontend expected names
+        return categories.map((category: any) => ({
+            ...category,
+            items: (category.items || []).map((item: any) => ({
+                id: item.id,
+                name: item.name,
+                description: item.description || '',
+                price: item.price,
+                image: item.image,
+                isVegetarian: item.isVegetarian,
+                isSpicy: item.isSpicy,
+                isAvailable: item.isActive !== false, // Map isActive to isAvailable
+            }))
+        }));
     } catch (error) {
         console.error('Failed to get menu:', error);
         throw error;
@@ -81,7 +110,13 @@ export const getMenu = async (restaurantId: string): Promise<Category[]> => {
 export const placeOrder = async (items: { menuItemId: string; quantity: number; price: number }[], totalAmount: number) => {
     try {
         const response = await api.post('/customer/orders', { items, totalAmount });
-        return response.data;
+        // Backend returns { success: true, order: { id, orderNumber, ... } }
+        const order = response.data.order || {};
+        return {
+            success: response.data.success,
+            order,
+            orderNumber: order.orderNumber, // Expose at top level for convenience
+        };
     } catch (error) {
         console.error('Failed to place order:', error);
         throw error;
