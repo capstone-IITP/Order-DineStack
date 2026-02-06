@@ -2,9 +2,23 @@
 
 import React, { useEffect, useState, useMemo, Suspense } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ShoppingCart, Minus, Plus, ChefHat, AlertCircle, CheckCircle2, Loader2, Utensils } from 'lucide-react';
+import { ShoppingBag, Minus, Plus, AlertCircle, CheckCircle2, Loader2, Utensils, ChefHat } from 'lucide-react';
 import { getTableInfo, placeOrder, SessionData, Category, MenuItem } from '@/lib/api';
 import Image from 'next/image';
+
+// Custom color palette
+const colors = {
+    cream: '#FFFBEA',
+    creamLight: '#F7F3E8',
+    burgundy: '#8A1538',
+    burgundyDark: '#6D0F2E',
+    textPrimary: '#111111',
+    textSecondary: '#2B2B2B',
+    grayLight: '#E5E5E5',
+    grayMedium: '#C9C9C9',
+    error: '#D32F2F',
+    success: '#2E7D32',
+};
 
 interface CartItem extends MenuItem {
     quantity: number;
@@ -43,7 +57,6 @@ function OrderContent() {
 
             try {
                 setLoading(true);
-                // Combined call to get session + menu
                 const data = await getTableInfo(tableId);
                 setSession({
                     token: data.token,
@@ -94,7 +107,6 @@ function OrderContent() {
     const handlePlaceOrder = async () => {
         if (cart.length === 0) return;
 
-        // Optional: Add simple confirmation
         if (!window.confirm(`Place order for ₹${cartTotal}?`)) return;
 
         setPlacingOrder(true);
@@ -110,7 +122,6 @@ function OrderContent() {
             setCart([]);
             setOrderSuccess(result.orderNumber || 'placed');
 
-            // For now, show success inline
             setTimeout(() => {
                 setOrderSuccess(null);
             }, 5000);
@@ -122,25 +133,53 @@ function OrderContent() {
         }
     };
 
-    // Render States
+    // Loading State
     if (loading) {
         return (
-            <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 p-4">
-                <Loader2 className="w-10 h-10 text-orange-500 animate-spin mb-4" />
-                <p className="text-gray-600 font-medium">Loading menu, please wait...</p>
+            <div
+                className="flex flex-col items-center justify-center min-h-screen p-4"
+                style={{ backgroundColor: colors.cream }}
+            >
+                <div
+                    className="w-16 h-16 rounded-full flex items-center justify-center mb-4 animate-pulse"
+                    style={{ backgroundColor: colors.burgundy }}
+                >
+                    <ChefHat className="w-8 h-8 text-white" />
+                </div>
+                <Loader2
+                    className="w-8 h-8 animate-spin mb-3"
+                    style={{ color: colors.burgundy }}
+                />
+                <p style={{ color: colors.textSecondary }} className="font-medium">
+                    Preparing your menu...
+                </p>
             </div>
         );
     }
 
+    // Error State
     if (error) {
         return (
-            <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 p-4 text-center">
-                <AlertCircle className="w-12 h-12 text-red-500 mb-4" />
-                <h2 className="text-xl font-bold text-gray-800 mb-2">Oops! Something went wrong</h2>
-                <p className="text-gray-600 mb-6">{error}</p>
+            <div
+                className="flex flex-col items-center justify-center min-h-screen p-6 text-center"
+                style={{ backgroundColor: colors.cream }}
+            >
+                <div
+                    className="w-16 h-16 rounded-full flex items-center justify-center mb-4"
+                    style={{ backgroundColor: `${colors.error}15` }}
+                >
+                    <AlertCircle className="w-8 h-8" style={{ color: colors.error }} />
+                </div>
+                <h2 className="text-xl font-bold mb-2" style={{ color: colors.textPrimary }}>
+                    Something went wrong
+                </h2>
+                <p className="mb-6 max-w-xs" style={{ color: colors.textSecondary }}>
+                    {error}
+                </p>
                 <button
                     onClick={() => window.location.reload()}
-                    className="px-6 py-2 bg-orange-600 text-white rounded-full font-medium shadow-md hover:bg-orange-700 transition"
+                    className="px-8 py-3 rounded-full font-semibold text-white shadow-lg transition-all hover:shadow-xl active:scale-95"
+                    style={{ backgroundColor: colors.burgundy }}
                 >
                     Try Again
                 </button>
@@ -149,59 +188,133 @@ function OrderContent() {
     }
 
     return (
-        <div className="min-h-screen bg-gray-50 pb-24">
-            {/* Header */}
-            <header className="sticky top-0 z-10 bg-white/90 backdrop-blur-md border-b border-gray-100 shadow-sm px-4 py-3 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center text-orange-600">
-                        <ChefHat size={18} />
+        <div className="min-h-screen pb-28" style={{ backgroundColor: colors.cream }}>
+            {/* Elegant Header */}
+            <header
+                className="sticky top-0 z-10 backdrop-blur-md border-b px-5 py-4"
+                style={{
+                    backgroundColor: `${colors.cream}ee`,
+                    borderColor: colors.grayLight
+                }}
+            >
+                <div className="flex items-center gap-3">
+                    <div
+                        className="w-12 h-12 rounded-full flex items-center justify-center shadow-md"
+                        style={{
+                            background: `linear-gradient(135deg, ${colors.burgundy}, ${colors.burgundyDark})`
+                        }}
+                    >
+                        <ChefHat className="w-6 h-6 text-white" />
                     </div>
                     <div>
-                        <h1 className="font-bold text-gray-900 leading-tight">
+                        <h1
+                            className="text-xl font-bold tracking-tight"
+                            style={{ color: colors.textPrimary }}
+                        >
                             {session?.restaurant.name || 'Restaurant'}
                         </h1>
-                        <p className="text-xs text-gray-500">
-                            Table {session?.table.number || '?'}
-                        </p>
+                        <div className="flex items-center gap-2">
+                            <span
+                                className="text-xs font-medium px-2 py-0.5 rounded-full"
+                                style={{
+                                    backgroundColor: colors.creamLight,
+                                    color: colors.burgundy
+                                }}
+                            >
+                                Table {session?.table.number || '?'}
+                            </span>
+                        </div>
                     </div>
                 </div>
             </header>
 
             {/* Success Banner */}
             {orderSuccess && (
-                <div className="fixed top-20 left-4 right-4 z-50 bg-green-100 border border-green-200 text-green-800 px-4 py-3 rounded-xl shadow-lg flex items-center gap-3 animate-in fade-in slide-in-from-top-4">
-                    <CheckCircle2 className="w-5 h-5 text-green-600" />
-                    <div className="flex-1">
-                        <p className="font-bold text-sm">Order Placed Successfully!</p>
-                        <p className="text-xs text-green-700">Order #{orderSuccess}</p>
+                <div
+                    className="fixed top-20 left-4 right-4 z-50 px-5 py-4 rounded-2xl shadow-xl flex items-center gap-4 animate-in fade-in slide-in-from-top-4"
+                    style={{
+                        backgroundColor: `${colors.success}10`,
+                        border: `2px solid ${colors.success}30`
+                    }}
+                >
+                    <div
+                        className="w-10 h-10 rounded-full flex items-center justify-center"
+                        style={{ backgroundColor: colors.success }}
+                    >
+                        <CheckCircle2 className="w-5 h-5 text-white" />
                     </div>
-                    <button onClick={() => setOrderSuccess(null)} className="text-green-600 hover:text-green-800">
-                        Close
-                    </button>
+                    <div className="flex-1">
+                        <p className="font-bold" style={{ color: colors.success }}>
+                            Order Confirmed!
+                        </p>
+                        <p className="text-sm" style={{ color: colors.textSecondary }}>
+                            Order #{orderSuccess} is being prepared
+                        </p>
+                    </div>
                 </div>
             )}
 
-            {/* Menu List */}
-            <main className="p-4 space-y-8">
+            {/* Menu */}
+            <main className="px-4 py-6 space-y-8">
                 {menu.length === 0 && (
-                    <div className="text-center py-10 text-gray-500">
-                        <Utensils className="w-12 h-12 mx-auto mb-3 opacity-20" />
-                        <p>Menu is currently empty.</p>
+                    <div className="text-center py-16">
+                        <div
+                            className="w-20 h-20 rounded-full mx-auto mb-4 flex items-center justify-center"
+                            style={{ backgroundColor: colors.creamLight }}
+                        >
+                            <Utensils className="w-10 h-10" style={{ color: colors.grayMedium }} />
+                        </div>
+                        <p style={{ color: colors.textSecondary }}>
+                            Menu is being prepared...
+                        </p>
                     </div>
                 )}
 
                 {menu.map((category) => (
-                    <section key={category.id} id={category.id}>
-                        <h2 className="text-lg font-bold text-gray-800 mb-4 sticky top-16 bg-gray-50/95 py-2 z-0">
-                            {category.name}
-                        </h2>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <section key={category.id}>
+                        {/* Category Header */}
+                        <div className="flex items-center gap-3 mb-5">
+                            <div
+                                className="w-1 h-6 rounded-full"
+                                style={{ backgroundColor: colors.burgundy }}
+                            />
+                            <h2
+                                className="text-lg font-bold uppercase tracking-wider"
+                                style={{ color: colors.textPrimary }}
+                            >
+                                {category.name}
+                            </h2>
+                            <div
+                                className="flex-1 h-px"
+                                style={{ backgroundColor: colors.grayLight }}
+                            />
+                        </div>
+
+                        {/* Items Grid */}
+                        <div className="space-y-4">
                             {category.items.map((item) => {
                                 const qty = getItemQuantity(item.id);
+                                const isInCart = qty > 0;
+
                                 return (
-                                    <div key={item.id} className="bg-white rounded-xl p-3 shadow-sm border border-gray-100 flex gap-4">
-                                        {/* Item Image */}
-                                        <div className="w-24 h-24 bg-gray-100 rounded-lg flex-shrink-0 relative overflow-hidden">
+                                    <div
+                                        key={item.id}
+                                        className="rounded-2xl p-4 flex gap-4 transition-all"
+                                        style={{
+                                            backgroundColor: isInCart ? colors.creamLight : 'white',
+                                            border: isInCart
+                                                ? `2px solid ${colors.burgundy}30`
+                                                : `1px solid ${colors.grayLight}`,
+                                            boxShadow: isInCart
+                                                ? `0 4px 20px ${colors.burgundy}15`
+                                                : '0 2px 8px rgba(0,0,0,0.04)'
+                                        }}
+                                    >
+                                        {/* Image */}
+                                        <div
+                                            className="w-24 h-24 rounded-xl flex-shrink-0 relative overflow-hidden"
+                                            style={{ backgroundColor: colors.creamLight }}
+                                        >
                                             {item.image ? (
                                                 <Image
                                                     src={item.image}
@@ -210,49 +323,75 @@ function OrderContent() {
                                                     className="object-cover"
                                                 />
                                             ) : (
-                                                <div className="w-full h-full flex items-center justify-center text-gray-300">
-                                                    <Utensils size={24} />
+                                                <div className="w-full h-full flex items-center justify-center">
+                                                    <Utensils
+                                                        size={28}
+                                                        style={{ color: colors.grayMedium }}
+                                                    />
                                                 </div>
                                             )}
                                         </div>
 
-                                        {/* Item Details */}
-                                        <div className="flex-1 flex flex-col justify-between">
+                                        {/* Details */}
+                                        <div className="flex-1 flex flex-col justify-between min-w-0">
                                             <div>
-                                                <div className="flex justify-between items-start">
-                                                    <h3 className="font-semibold text-gray-900 line-clamp-1">{item.name}</h3>
-                                                    <span className="text-sm font-bold text-gray-700">₹{item.price}</span>
-                                                </div>
-                                                <p className="text-xs text-gray-500 line-clamp-2 mt-1">{item.description}</p>
+                                                <h3
+                                                    className="font-semibold text-base truncate"
+                                                    style={{ color: colors.textPrimary }}
+                                                >
+                                                    {item.name}
+                                                </h3>
+                                                <p
+                                                    className="text-sm line-clamp-2 mt-1"
+                                                    style={{ color: colors.textSecondary }}
+                                                >
+                                                    {item.description}
+                                                </p>
                                             </div>
 
-                                            {/* Add/Quantity Controls */}
-                                            <div className="flex justify-end mt-3">
+                                            <div className="flex items-center justify-between mt-3">
+                                                <span
+                                                    className="text-lg font-bold"
+                                                    style={{ color: colors.burgundy }}
+                                                >
+                                                    ₹{item.price}
+                                                </span>
+
+                                                {/* Controls */}
                                                 {qty === 0 ? (
                                                     <button
                                                         onClick={() => addToCart(item)}
                                                         disabled={!item.isAvailable}
-                                                        className={`px-4 py-1.5 rounded-lg text-sm font-medium transition
-                              ${item.isAvailable
-                                                                ? 'bg-orange-50 text-orange-600 hover:bg-orange-100 active:bg-orange-200'
-                                                                : 'bg-gray-100 text-gray-400 cursor-not-allowed'}`}
+                                                        className="px-5 py-2 rounded-full text-sm font-semibold transition-all active:scale-95"
+                                                        style={item.isAvailable ? {
+                                                            backgroundColor: colors.burgundy,
+                                                            color: 'white'
+                                                        } : {
+                                                            backgroundColor: colors.grayLight,
+                                                            color: colors.grayMedium
+                                                        }}
                                                     >
-                                                        {item.isAvailable ? 'Add' : 'Sold Out'}
+                                                        {item.isAvailable ? 'ADD' : 'Sold Out'}
                                                     </button>
                                                 ) : (
-                                                    <div className="flex items-center bg-orange-600 rounded-lg text-white shadow-sm">
+                                                    <div
+                                                        className="flex items-center rounded-full shadow-md overflow-hidden"
+                                                        style={{ backgroundColor: colors.burgundy }}
+                                                    >
                                                         <button
                                                             onClick={() => removeFromCart(item.id)}
-                                                            className="p-1.5 hover:bg-orange-700 rounded-l-lg transition"
+                                                            className="p-2.5 text-white hover:bg-black/10 transition"
                                                         >
-                                                            <Minus size={14} />
+                                                            <Minus size={16} />
                                                         </button>
-                                                        <span className="w-6 text-center text-sm font-bold">{qty}</span>
+                                                        <span className="w-8 text-center text-white font-bold">
+                                                            {qty}
+                                                        </span>
                                                         <button
                                                             onClick={() => addToCart(item)}
-                                                            className="p-1.5 hover:bg-orange-700 rounded-r-lg transition"
+                                                            className="p-2.5 text-white hover:bg-black/10 transition"
                                                         >
-                                                            <Plus size={14} />
+                                                            <Plus size={16} />
                                                         </button>
                                                     </div>
                                                 )}
@@ -262,26 +401,45 @@ function OrderContent() {
                                 );
                             })}
                         </div>
+
                         {category.items.length === 0 && (
-                            <p className="text-sm text-gray-400 italic">No items in this category.</p>
+                            <p
+                                className="text-sm italic text-center py-4"
+                                style={{ color: colors.grayMedium }}
+                            >
+                                No items available
+                            </p>
                         )}
                     </section>
                 ))}
             </main>
 
-            {/* Floating Cart Bar */}
+            {/* Premium Cart Bar */}
             {cartItemCount > 0 && (
-                <div className="fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-white via-white to-transparent z-20">
-                    <div className="bg-gray-900 text-white rounded-2xl p-4 shadow-xl flex items-center justify-between max-w-4xl mx-auto">
-                        <div className="flex flex-col">
-                            <span className="text-xs text-gray-400 font-medium">{cartItemCount} items</span>
-                            <span className="font-bold text-lg">₹{cartTotal.toFixed(2)}</span>
+                <div className="fixed bottom-0 left-0 right-0 p-4 z-20">
+                    <div
+                        className="rounded-2xl p-4 flex items-center justify-between max-w-lg mx-auto shadow-2xl"
+                        style={{
+                            background: `linear-gradient(135deg, ${colors.burgundy}, ${colors.burgundyDark})`
+                        }}
+                    >
+                        <div>
+                            <p className="text-white/70 text-xs font-medium">
+                                {cartItemCount} {cartItemCount === 1 ? 'item' : 'items'}
+                            </p>
+                            <p className="text-white text-xl font-bold">
+                                ₹{cartTotal.toFixed(0)}
+                            </p>
                         </div>
 
                         <button
                             onClick={handlePlaceOrder}
                             disabled={placingOrder}
-                            className="bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-6 rounded-xl flex items-center gap-2 transition disabled:opacity-70 disabled:cursor-not-allowed"
+                            className="flex items-center gap-2 px-6 py-3 rounded-xl font-bold transition-all active:scale-95 disabled:opacity-70"
+                            style={{
+                                backgroundColor: colors.cream,
+                                color: colors.burgundy
+                            }}
                         >
                             {placingOrder ? (
                                 <>
@@ -291,7 +449,7 @@ function OrderContent() {
                             ) : (
                                 <>
                                     Place Order
-                                    <ShoppingCart size={18} />
+                                    <ShoppingBag size={18} />
                                 </>
                             )}
                         </button>
@@ -305,8 +463,11 @@ function OrderContent() {
 export default function TableOrderPage() {
     return (
         <Suspense fallback={
-            <div className="flex justify-center items-center min-h-screen bg-gray-50">
-                <Loader2 className="animate-spin w-10 h-10 text-orange-500" />
+            <div
+                className="flex flex-col justify-center items-center min-h-screen"
+                style={{ backgroundColor: '#FFFBEA' }}
+            >
+                <Loader2 className="animate-spin w-10 h-10" style={{ color: '#8A1538' }} />
             </div>
         }>
             <OrderContent />

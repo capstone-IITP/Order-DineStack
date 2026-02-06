@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo, useRef, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode';
+import { Html5Qrcode } from 'html5-qrcode';
 import { Utensils, Loader2, Check, CheckCircle2, Search, Filter, ChevronRight, Star, Leaf, Plus, Minus, X, ShoppingBag, ArrowLeft, Trash2, AlertCircle, Clock, ChefHat, Bell, WifiOff, Lock, RefreshCw, Send, ScanLine, Camera, Smartphone } from 'lucide-react';
 
 // --- Configuration ---
