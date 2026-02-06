@@ -133,4 +133,59 @@ export const getOrderStatus = async (orderId: string) => {
     }
 };
 
+// Combined table info + session + menu (for path-based QR routing)
+export interface TableInfoResponse {
+    success: boolean;
+    token: string;
+    restaurant: {
+        id: string;
+        name: string;
+    };
+    table: {
+        id: string;
+        number: string;
+    };
+    categories: Category[];
+}
+
+export const getTableInfo = async (tableId: string): Promise<TableInfoResponse> => {
+    try {
+        const response = await api.get(`/customer/table/${tableId}`);
+        const data = response.data;
+
+        // Store token
+        if (data.token) {
+            localStorage.setItem('customerToken', data.token);
+            localStorage.setItem('sessionData', JSON.stringify({
+                token: data.token,
+                restaurant: data.restaurant,
+                table: data.table
+            }));
+        }
+
+        // Map menu items isActive -> isAvailable
+        const categories = (data.categories || []).map((category: any) => ({
+            ...category,
+            items: (category.items || []).map((item: any) => ({
+                id: item.id,
+                name: item.name,
+                description: item.description || '',
+                price: item.price,
+                image: item.image,
+                isVegetarian: item.isVegetarian,
+                isSpicy: item.isSpicy,
+                isAvailable: item.isActive !== false,
+            }))
+        }));
+
+        return {
+            ...data,
+            categories
+        };
+    } catch (error) {
+        console.error('Failed to get table info:', error);
+        throw error;
+    }
+};
+
 export default api;
