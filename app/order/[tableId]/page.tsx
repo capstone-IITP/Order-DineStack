@@ -1,16 +1,16 @@
 "use client";
 
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, Suspense } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { ShoppingCart, Minus, Plus, ChefHat, AlertCircle, CheckCircle2, Loader2, Utensils } from 'lucide-react';
-import { getTableInfo, placeOrder, Category, MenuItem, TableInfoResponse } from '@/lib/api';
+import { getTableInfo, placeOrder, SessionData, Category, MenuItem } from '@/lib/api';
 import Image from 'next/image';
 
 interface CartItem extends MenuItem {
     quantity: number;
 }
 
-export default function TableOrderPage() {
+function OrderContent() {
     const params = useParams();
     const router = useRouter();
     const tableId = params.tableId as string;
@@ -18,12 +18,12 @@ export default function TableOrderPage() {
     // State
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [tableInfo, setTableInfo] = useState<TableInfoResponse | null>(null);
+    const [session, setSession] = useState<SessionData | null>(null);
+    const [menu, setMenu] = useState<Category[]>([]);
     const [cart, setCart] = useState<CartItem[]>([]);
     const [placingOrder, setPlacingOrder] = useState(false);
     const [orderSuccess, setOrderSuccess] = useState<string | null>(null);
 
-    // Derived State
     const cartTotal = useMemo(() => {
         return cart.reduce((total, item) => total + (item.price * item.quantity), 0);
     }, [cart]);
@@ -32,7 +32,7 @@ export default function TableOrderPage() {
         return cart.reduce((count, item) => count + item.quantity, 0);
     }, [cart]);
 
-    // Load table info + menu on mount
+    // Effects
     useEffect(() => {
         const loadData = async () => {
             if (!tableId) {
@@ -43,8 +43,14 @@ export default function TableOrderPage() {
 
             try {
                 setLoading(true);
+                // Combined call to get session + menu
                 const data = await getTableInfo(tableId);
-                setTableInfo(data);
+                setSession({
+                    token: data.token,
+                    restaurant: data.restaurant,
+                    table: data.table
+                });
+                setMenu(data.categories);
                 setError(null);
             } catch (err: any) {
                 console.error("Error loading data:", err);
@@ -88,6 +94,7 @@ export default function TableOrderPage() {
     const handlePlaceOrder = async () => {
         if (cart.length === 0) return;
 
+        // Optional: Add simple confirmation
         if (!window.confirm(`Place order for ₹${cartTotal}?`)) return;
 
         setPlacingOrder(true);
@@ -103,6 +110,7 @@ export default function TableOrderPage() {
             setCart([]);
             setOrderSuccess(result.orderNumber || 'placed');
 
+            // For now, show success inline
             setTimeout(() => {
                 setOrderSuccess(null);
             }, 5000);
@@ -114,7 +122,7 @@ export default function TableOrderPage() {
         }
     };
 
-    // Loading State
+    // Render States
     if (loading) {
         return (
             <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 p-4">
@@ -124,7 +132,6 @@ export default function TableOrderPage() {
         );
     }
 
-    // Error State
     if (error) {
         return (
             <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 p-4 text-center">
@@ -141,8 +148,6 @@ export default function TableOrderPage() {
         );
     }
 
-    const menu = tableInfo?.categories || [];
-
     return (
         <div className="min-h-screen bg-gray-50 pb-24">
             {/* Header */}
@@ -153,10 +158,10 @@ export default function TableOrderPage() {
                     </div>
                     <div>
                         <h1 className="font-bold text-gray-900 leading-tight">
-                            {tableInfo?.restaurant.name || 'Restaurant'}
+                            {session?.restaurant.name || 'Restaurant'}
                         </h1>
                         <p className="text-xs text-gray-500">
-                            Table {tableInfo?.table.number || '?'}
+                            Table {session?.table.number || '?'}
                         </p>
                     </div>
                 </div>
@@ -294,5 +299,17 @@ export default function TableOrderPage() {
                 </div>
             )}
         </div>
+    );
+}
+
+export default function TableOrderPage() {
+    return (
+        <Suspense fallback={
+            <div className="flex justify-center items-center min-h-screen bg-gray-50">
+                <Loader2 className="animate-spin w-10 h-10 text-orange-500" />
+            </div>
+        }>
+            <OrderContent />
+        </Suspense>
     );
 }
