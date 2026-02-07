@@ -143,7 +143,7 @@ function SuccessContent() {
                             style={{ backgroundColor: THEME.secondary }}>
                             <CheckCircle2 size={20} />
                             Enjoy your meal!
-                            <img src="https://cdn-icons-png.flaticon.com/128/16695/16695112.png" className="w-5 h-5 brightness-0 invert ml-1" alt="Enjoy" />
+                            <img src="https://cdn-icons-png.flaticon.com/128/16695/16695112.png" className="w-5 h-5 ml-1" alt="Enjoy" />
                         </div>
                     ) : (
                         <div className="w-full py-4 rounded-xl font-bold text-white flex items-center justify-center gap-2 opacity-90 cursor-default animate-pulse-slow"
