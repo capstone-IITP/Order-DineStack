@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useMemo, Suspense } from 'react';
+import React, { useEffect, useState, useMemo, Suspense, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import {
     Search,
@@ -23,6 +23,7 @@ import {
     Banknote
 } from 'lucide-react';
 import { getTableInfo, placeOrder, SessionData, Category, MenuItem } from '@/lib/api';
+import { useLenisScroll } from '@/components/LenisProvider';
 
 // --- Configuration & Data ---
 
@@ -77,6 +78,10 @@ function OrderContent() {
     const [isCartOpen, setIsCartOpen] = useState(false);
     const [filters, setFilters] = useState({ vegOnly: false, nonVeg: false });
     const [paymentMethod, setPaymentMethod] = useState<'online' | 'cash'>('cash');
+
+    // Smooth scroll ref
+    const mainRef = useRef<HTMLElement>(null);
+    useLenisScroll(mainRef);
 
     // Load data from backend
     useEffect(() => {
@@ -316,7 +321,7 @@ function OrderContent() {
             </div>
 
             {/* Main Content */}
-            <main className="flex-1 overflow-y-auto px-6 pt-6 pb-32 w-full overscroll-contain no-scrollbar relative z-10">
+            <main ref={mainRef} className="flex-1 overflow-y-auto px-6 pt-6 pb-32 w-full overscroll-contain no-scrollbar relative z-10">
 
                 {filteredItems.length === 0 ? (
                     <div className="h-64 flex flex-col items-center justify-center text-center opacity-40">
