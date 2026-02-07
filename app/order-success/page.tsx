@@ -135,13 +135,15 @@ function SuccessContent() {
                         <div className="w-full py-4 rounded-xl font-bold text-white flex items-center justify-center gap-2 shadow-lg animate-bounce"
                             style={{ backgroundColor: THEME.success }}>
                             <Utensils size={20} />
-                            Ready! Please Pick Up
+                            Ready! Serving shortly
+                            <img src="https://cdn-icons-png.flaticon.com/128/6699/6699608.png" className="w-5 h-5 brightness-0 invert ml-1" alt="Serving" />
                         </div>
                     ) : status === 'SERVED' || status === 'COMPLETED' ? (
                         <div className="w-full py-4 rounded-xl font-bold text-white flex items-center justify-center gap-2 opacity-90"
                             style={{ backgroundColor: THEME.secondary }}>
                             <CheckCircle2 size={20} />
                             Enjoy your meal!
+                            <img src="https://cdn-icons-png.flaticon.com/128/16695/16695112.png" className="w-5 h-5 brightness-0 invert ml-1" alt="Enjoy" />
                         </div>
                     ) : (
                         <div className="w-full py-4 rounded-xl font-bold text-white flex items-center justify-center gap-2 opacity-90 cursor-default animate-pulse-slow"
