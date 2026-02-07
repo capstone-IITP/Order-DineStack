@@ -179,7 +179,7 @@ export const placeOrder = async (
         return {
             success: response.data.success,
             order,
-            orderNumber: order.orderNumber, // Expose at top level for convenience
+            orderNumber: order.id, // Fallback to ID since orderNumber doesn't exist in schema
             estimatedTime: response.data.estimatedTime,
         };
     } catch (error) {

@@ -182,8 +182,12 @@ function OrderContent() {
 
             // Redirect to success page
             const params = new URLSearchParams();
-            if (result.orderNumber) params.set('orderId', result.orderNumber);
-            if (result.order.estimatedTime) params.set('estimatedTime', result.order.estimatedTime);
+            const orderId = result.orderNumber || result.order?.id;
+            if (orderId) params.set('orderId', orderId);
+
+            // Access estimatedTime from the result root (as returned by PlaceOrder)
+            const eta = result.estimatedTime || '20 mins';
+            params.set('eta', eta);
 
             router.push(`/order-success?${params.toString()}`);
 
