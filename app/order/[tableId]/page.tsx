@@ -241,7 +241,7 @@ function OrderContent() {
                         <div className="flex items-center gap-1 bg-green-50 border border-green-200 px-2.5 py-1.5 rounded-lg">
                             <span className="w-1.5 h-1.5 rounded-full bg-green-600 animate-pulse" />
                             <span className="text-xs font-bold text-green-800 uppercase tracking-wide">
-                                Table {session?.table.number}
+                                {session?.table.number}
                             </span>
                         </div>
                     </div>
