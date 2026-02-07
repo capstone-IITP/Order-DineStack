@@ -174,7 +174,7 @@ function OrderContent() {
                 };
             });
 
-            const result = await placeOrder(orderItems, cartTotal);
+            const result = await placeOrder(orderItems, cartTotal, tableId);
 
             setCart({});
             setOrderSuccess(result.orderNumber || 'placed');

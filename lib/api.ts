@@ -160,9 +160,20 @@ export const getMenu = async (restaurantId: string): Promise<Category[]> => {
     }
 };
 
-export const placeOrder = async (items: { menuItemId: string; quantity: number; price: number }[], totalAmount: number) => {
+export const placeOrder = async (
+    items: { menuItemId: string; quantity: number; price: number }[],
+    totalAmount: number,
+    tableId?: string
+) => {
     try {
-        const response = await api.post('/customer/orders', { items, totalAmount });
+        // Use provided tableId or fall back to stored currentTableId
+        const orderTableId = tableId || getCurrentTableId();
+
+        const response = await api.post('/customer/orders', {
+            items,
+            totalAmount,
+            tableId: orderTableId
+        });
         // Backend returns { success: true, order: { id, orderNumber, ... } }
         const order = response.data.order || {};
         return {
