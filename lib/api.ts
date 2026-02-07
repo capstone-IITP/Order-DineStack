@@ -7,6 +7,7 @@ const api = axios.create({
     headers: {
         'Content-Type': 'application/json',
     },
+    withCredentials: true, // Enable cookie-based JWT sessions
 });
 
 // Interceptor to add token to requests
@@ -19,6 +20,58 @@ api.interceptors.request.use((config) => {
     }
     return config;
 });
+
+// Store current table ID for session recovery
+let currentTableId: string | null = null;
+
+export const setCurrentTableId = (tableId: string) => {
+    currentTableId = tableId;
+};
+
+export const getCurrentTableId = () => currentTableId;
+
+// Response interceptor for 401 handling with session retry
+api.interceptors.response.use(
+    (response) => response,
+    async (error) => {
+        const originalRequest = error.config;
+
+        // If we get a 401 and haven't retried yet, attempt to re-bootstrap session
+        if (error.response?.status === 401 && !originalRequest._retry && currentTableId) {
+            originalRequest._retry = true;
+
+            try {
+                console.log('Session expired, attempting to re-bootstrap...');
+                // Re-bootstrap session by calling table info endpoint
+                const response = await api.get(`/customer/table/${currentTableId}`);
+                const data = response.data;
+
+                if (data.token) {
+                    localStorage.setItem('customerToken', data.token);
+                    localStorage.setItem('sessionData', JSON.stringify({
+                        token: data.token,
+                        restaurant: data.restaurant,
+                        table: data.table
+                    }));
+
+                    // Update Authorization header for retry
+                    originalRequest.headers.Authorization = `Bearer ${data.token}`;
+                }
+
+                // Retry the original request
+                return api(originalRequest);
+            } catch (retryError) {
+                console.error('Failed to re-bootstrap session:', retryError);
+                // Clear stored credentials on failed retry
+                localStorage.removeItem('customerToken');
+                localStorage.removeItem('sessionData');
+                throw error; // Throw original error
+            }
+        }
+
+        return Promise.reject(error);
+    }
+);
 
 export interface SessionData {
     token: string;
@@ -150,6 +203,9 @@ export interface TableInfoResponse {
 
 export const getTableInfo = async (tableId: string): Promise<TableInfoResponse> => {
     try {
+        // Store table ID for session recovery on 401
+        setCurrentTableId(tableId);
+
         const response = await api.get(`/customer/table/${tableId}`);
         const data = response.data;
 
