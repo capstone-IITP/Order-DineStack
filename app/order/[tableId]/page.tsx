@@ -18,7 +18,9 @@ import {
     Sparkles,
     AlertCircle,
     CheckCircle2,
-    Loader2
+    Loader2,
+    Wallet,
+    Banknote
 } from 'lucide-react';
 import { getTableInfo, placeOrder, SessionData, Category, MenuItem } from '@/lib/api';
 
@@ -73,6 +75,7 @@ function OrderContent() {
     const [cart, setCart] = useState<{ [key: string]: number }>({});
     const [isCartOpen, setIsCartOpen] = useState(false);
     const [filters, setFilters] = useState({ vegOnly: false, nonVeg: false });
+    const [paymentMethod, setPaymentMethod] = useState<'online' | 'cash'>('cash');
 
     // Load data from backend
     useEffect(() => {
@@ -451,6 +454,35 @@ function OrderContent() {
                             <div className="flex justify-between items-center mb-6">
                                 <span className="text-gray-400 font-medium">Grand Total</span>
                                 <span className="text-3xl font-light" style={{ color: THEME.text }}>₹{cartTotal.toFixed(2)}</span>
+                            </div>
+
+                            {/* Payment Method Selection */}
+                            <div className="mb-6">
+                                <span className="text-xs font-bold uppercase tracking-widest mb-3 block" style={{ color: THEME.textMuted }}>Payment Method</span>
+                                <div className="flex gap-3">
+                                    <button
+                                        onClick={() => setPaymentMethod('online')}
+                                        className={`flex-1 flex items-center justify-center gap-2 py-4 rounded-xl border-2 transition-all font-semibold ${paymentMethod === 'online'
+                                                ? 'border-[#8B1E3F] bg-[#8B1E3F]/5'
+                                                : 'border-gray-200 bg-white hover:border-gray-300'
+                                            }`}
+                                        style={{ color: paymentMethod === 'online' ? THEME.primary : THEME.textMuted }}
+                                    >
+                                        <Wallet size={20} />
+                                        <span>Online</span>
+                                    </button>
+                                    <button
+                                        onClick={() => setPaymentMethod('cash')}
+                                        className={`flex-1 flex items-center justify-center gap-2 py-4 rounded-xl border-2 transition-all font-semibold ${paymentMethod === 'cash'
+                                                ? 'border-[#8B1E3F] bg-[#8B1E3F]/5'
+                                                : 'border-gray-200 bg-white hover:border-gray-300'
+                                            }`}
+                                        style={{ color: paymentMethod === 'cash' ? THEME.primary : THEME.textMuted }}
+                                    >
+                                        <Banknote size={20} />
+                                        <span>Cash</span>
+                                    </button>
+                                </div>
                             </div>
                             <button
                                 onClick={handlePlaceOrder}
