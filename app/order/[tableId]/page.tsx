@@ -233,15 +233,15 @@ function OrderContent() {
     // --- Render ---
 
     return (
-        <div className="absolute inset-0 flex flex-col font-sans select-none overflow-hidden"
+        <div className="min-h-screen relative font-sans select-none"
             style={{ backgroundColor: THEME.bg, color: THEME.text }}>
 
-            {/* Background Ambience */}
-            <div className="absolute top-[-20%] left-[-20%] w-[60%] h-[50%] bg-white/40 blur-[120px] rounded-full pointer-events-none" />
-            <div className="absolute bottom-[-20%] right-[-20%] w-[60%] h-[50%] bg-yellow-500/10 blur-[120px] rounded-full pointer-events-none" />
+            {/* Background Ambience - Fixed */}
+            <div className="fixed top-[-20%] left-[-20%] w-[60%] h-[50%] bg-white/40 blur-[120px] rounded-full pointer-events-none" />
+            <div className="fixed bottom-[-20%] right-[-20%] w-[60%] h-[50%] bg-yellow-500/10 blur-[120px] rounded-full pointer-events-none" />
 
-            {/* Header */}
-            <div className="flex-none z-40 relative">
+            {/* Sticky Header with Frosted Glass */}
+            <header className="sticky top-0 z-40 backdrop-blur-xl bg-[#FFFBEA]/80 border-b border-transparent" style={{ borderColor: 'rgba(232, 228, 213, 0.5)' }}>
                 <div className="px-6 pt-8 pb-2 flex justify-between items-end">
                     <div>
                         <h2 className="text-xs font-bold uppercase tracking-[0.2em] mb-1" style={{ color: THEME.secondary }}>
@@ -313,10 +313,10 @@ function OrderContent() {
                         Non-Veg Only
                     </button>
                 </div>
-            </div>
+            </header>
 
-            {/* Main Content */}
-            <main className="flex-1 overflow-y-auto scroll-smooth px-6 pt-6 pb-32 w-full overscroll-contain no-scrollbar relative z-10">
+            {/* Main Content - Natural Scroll */}
+            <main className="px-6 pt-6 pb-32 w-full relative z-10">
 
                 {filteredItems.length === 0 ? (
                     <div className="h-64 flex flex-col items-center justify-center text-center opacity-40">
@@ -387,7 +387,7 @@ function OrderContent() {
 
             {/* Floating Glass Cart */}
             {cartItemCount > 0 && !isCartOpen && (
-                <div className="absolute bottom-8 left-6 right-6 z-50 animate-bounce-in">
+                <div className="fixed bottom-8 left-6 right-6 z-50 animate-bounce-in">
                     <button
                         onClick={() => setIsCartOpen(true)}
                         className="w-full h-16 relative overflow-hidden rounded-2xl shadow-xl flex items-center justify-between px-1 group active:scale-[0.98] transition-transform"
@@ -420,7 +420,7 @@ function OrderContent() {
 
             {/* Cart Modal (Sheet) */}
             {isCartOpen && (
-                <div className="absolute inset-0 z-50 flex flex-col justify-end bg-black/60 backdrop-blur-sm animate-fade-in">
+                <div className="fixed inset-0 z-50 flex flex-col justify-end bg-black/60 backdrop-blur-sm animate-fade-in">
                     <div className="absolute inset-0" onClick={() => setIsCartOpen(false)} />
 
                     <div className="w-full bg-white rounded-t-[40px] max-h-[85vh] flex flex-col shadow-2xl animate-slide-up relative" style={{ backgroundColor: '#FFFBEA' }}>
