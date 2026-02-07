@@ -68,6 +68,7 @@ function OrderContent() {
     const [menu, setMenu] = useState<Category[]>([]);
     const [placingOrder, setPlacingOrder] = useState(false);
     const [orderSuccess, setOrderSuccess] = useState<string | null>(null);
+    const [orderError, setOrderError] = useState<string | null>(null);
 
     // UI state
     const [activeCategory, setActiveCategory] = useState("All");
@@ -161,6 +162,7 @@ function OrderContent() {
 
         setPlacingOrder(true);
         setIsCartOpen(false);
+        setOrderError(null); // Clear previous error
 
         try {
             const orderItems = Object.entries(cart).map(([id, qty]) => {
@@ -181,8 +183,18 @@ function OrderContent() {
                 setOrderSuccess(null);
             }, 5000);
 
-        } catch (err) {
-            alert('Failed to place order. Please try again.');
+        } catch (err: any) {
+            console.error('Order placement error:', err);
+            // Extract error message from axios error response
+            const errorMessage = err?.response?.data?.error
+                || err?.message
+                || 'Failed to place order. Please try again.';
+            setOrderError(errorMessage);
+
+            // Auto-dismiss error after 6 seconds
+            setTimeout(() => {
+                setOrderError(null);
+            }, 6000);
         } finally {
             setPlacingOrder(false);
         }
@@ -463,8 +475,8 @@ function OrderContent() {
                                     <button
                                         onClick={() => setPaymentMethod('online')}
                                         className={`flex-1 flex items-center justify-center gap-2 py-4 rounded-xl border-2 transition-all font-semibold ${paymentMethod === 'online'
-                                                ? 'border-[#8B1E3F] bg-[#8B1E3F]/5'
-                                                : 'border-gray-200 bg-white hover:border-gray-300'
+                                            ? 'border-[#8B1E3F] bg-[#8B1E3F]/5'
+                                            : 'border-gray-200 bg-white hover:border-gray-300'
                                             }`}
                                         style={{ color: paymentMethod === 'online' ? THEME.primary : THEME.textMuted }}
                                     >
@@ -474,8 +486,8 @@ function OrderContent() {
                                     <button
                                         onClick={() => setPaymentMethod('cash')}
                                         className={`flex-1 flex items-center justify-center gap-2 py-4 rounded-xl border-2 transition-all font-semibold ${paymentMethod === 'cash'
-                                                ? 'border-[#8B1E3F] bg-[#8B1E3F]/5'
-                                                : 'border-gray-200 bg-white hover:border-gray-300'
+                                            ? 'border-[#8B1E3F] bg-[#8B1E3F]/5'
+                                            : 'border-gray-200 bg-white hover:border-gray-300'
                                             }`}
                                         style={{ color: paymentMethod === 'cash' ? THEME.primary : THEME.textMuted }}
                                     >
@@ -517,6 +529,27 @@ function OrderContent() {
                             <h4 className="font-bold text-sm">Order Sent Successfully!</h4>
                             <p className="text-white/90 text-xs mt-0.5">Order #{orderSuccess} has been placed.</p>
                         </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Order Error Toast */}
+            {orderError && (
+                <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[60] w-[90%] max-w-sm animate-in slide-in-from-top-4 fade-in duration-300">
+                    <div className="bg-red-600 text-white px-4 py-3 rounded-xl shadow-xl flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center shrink-0">
+                            <AlertCircle size={18} className="text-white" />
+                        </div>
+                        <div className="flex-1">
+                            <h4 className="font-bold text-sm">Order Failed</h4>
+                            <p className="text-white/90 text-xs mt-0.5">{orderError}</p>
+                        </div>
+                        <button
+                            onClick={() => setOrderError(null)}
+                            className="p-1 hover:bg-white/10 rounded-full transition-colors"
+                        >
+                            <X size={16} />
+                        </button>
                     </div>
                 </div>
             )}
