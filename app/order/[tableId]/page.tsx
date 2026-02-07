@@ -236,12 +236,12 @@ function OrderContent() {
         <div className="min-h-screen relative font-sans select-none"
             style={{ backgroundColor: THEME.bg, color: THEME.text }}>
 
-            {/* Background Ambience - Fixed */}
-            <div className="fixed top-[-20%] left-[-20%] w-[60%] h-[50%] bg-white/40 blur-[120px] rounded-full pointer-events-none" />
-            <div className="fixed bottom-[-20%] right-[-20%] w-[60%] h-[50%] bg-yellow-500/10 blur-[120px] rounded-full pointer-events-none" />
+            {/* Background Ambience - Optimized */}
+            <div className="fixed top-[-20%] left-[-20%] w-[60%] h-[50%] bg-white/30 blur-3xl rounded-full pointer-events-none will-change-transform" />
+            <div className="fixed bottom-[-20%] right-[-20%] w-[60%] h-[50%] bg-yellow-500/5 blur-3xl rounded-full pointer-events-none will-change-transform" />
 
-            {/* Sticky Header with Frosted Glass */}
-            <header className="sticky top-0 z-40 backdrop-blur-xl bg-[#FFFBEA]/80 border-b border-transparent" style={{ borderColor: 'rgba(232, 228, 213, 0.5)' }}>
+            {/* Sticky Header - Optimized */}
+            <header className="sticky top-0 z-40 bg-[#FFFBEA]/95" style={{ borderBottom: '1px solid rgba(232, 228, 213, 0.5)' }}>
                 <div className="px-6 pt-8 pb-2 flex justify-between items-end">
                     <div>
                         <h2 className="text-xs font-bold uppercase tracking-[0.2em] mb-1" style={{ color: THEME.secondary }}>

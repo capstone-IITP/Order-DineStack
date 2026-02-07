@@ -11,18 +11,18 @@ export default function SmoothScroll({ children }: SmoothScrollProps) {
     const lenisRef = useRef<Lenis | null>(null);
 
     useEffect(() => {
-        // Initialize Lenis with premium settings
+        // Initialize Lenis with optimized mobile settings
         lenisRef.current = new Lenis({
-            duration: 1.4,
-            easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)), // Expo easing
+            duration: 0.8, // Faster for mobile
+            easing: (t) => 1 - Math.pow(1 - t, 3), // Simpler cubic easing
             orientation: 'vertical',
             gestureOrientation: 'vertical',
             smoothWheel: true,
-            touchMultiplier: 1.5,
+            touchMultiplier: 1.2,
             infinite: false,
         });
 
-        // RAF loop for smooth updates
+        // RAF loop
         function raf(time: number) {
             lenisRef.current?.raf(time);
             requestAnimationFrame(raf);
@@ -30,7 +30,6 @@ export default function SmoothScroll({ children }: SmoothScrollProps) {
 
         requestAnimationFrame(raf);
 
-        // Cleanup
         return () => {
             lenisRef.current?.destroy();
             lenisRef.current = null;
@@ -38,16 +37,4 @@ export default function SmoothScroll({ children }: SmoothScrollProps) {
     }, []);
 
     return <>{children}</>;
-}
-
-// Export hook for programmatic scroll
-export function useLenis() {
-    return {
-        scrollTo: (target: string | number | HTMLElement, options?: { offset?: number; duration?: number }) => {
-            const lenis = (window as any).__lenis;
-            if (lenis) {
-                lenis.scrollTo(target, options);
-            }
-        }
-    };
 }
