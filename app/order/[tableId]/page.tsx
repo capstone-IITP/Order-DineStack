@@ -1,56 +1,80 @@
 "use client";
 
-import React, { useEffect, useState, useMemo, Suspense, useRef } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import { ShoppingBag, Minus, Plus, AlertCircle, CheckCircle2, Loader2, Utensils, ChefHat, Search, ArrowRight, ArrowLeft, Star } from 'lucide-react';
+import React, { useEffect, useState, useMemo, Suspense } from 'react';
+import { useParams } from 'next/navigation';
+import {
+    Search,
+    ShoppingBag,
+    X,
+    ChefHat,
+    Plus,
+    Minus,
+    ChevronRight,
+    Utensils,
+    Coffee,
+    IceCream,
+    Soup,
+    Flame,
+    Sparkles,
+    AlertCircle,
+    CheckCircle2,
+    Loader2
+} from 'lucide-react';
 import { getTableInfo, placeOrder, SessionData, Category, MenuItem } from '@/lib/api';
-import Image from 'next/image';
 
-// Delivery App Style Theme
-const theme = {
-    background: '#F9F9F9',
-    primary: '#8A1538', // Burgundy/Maroon BRAND color
-    textPrimary: '#333333',
-    textSecondary: '#666666',
-    white: '#FFFFFF',
-    border: '#E0E0E0',
-    success: '#2D9F5D',
-    activePill: '#8A1538',
-    inactivePill: '#FFFFFF',
-    danger: '#D32F2F'
+// --- Configuration & Data ---
+
+const THEME = {
+    bg: '#FFFBEA',         // Warm Cream
+    surface: '#FFFFFF',    // Pure White
+    primary: '#8B1E3F',    // Deep Wine / Maroon
+    secondary: '#C9A24D',  // Muted Gold
+    text: '#1C1C1C',       // Near Black
+    textMuted: '#6B6B6B',  // Soft Gray
+    border: '#E8E4D5',     // Light Beige Border
+    veg: '#2E7D32',        // Green
+    nonVeg: '#C62828',     // Red
+    glass: 'rgba(139, 30, 63, 0.95)', // Wine Glass for Cart
 };
 
-interface CartItem extends MenuItem {
-    quantity: number;
-}
+const CATEGORY_ICONS: { [key: string]: any } = {
+    "All": Sparkles,
+    "Starters": Soup,
+    "Mains": Utensils,
+    "Combos": ChefHat,
+    "Desserts": IceCream,
+    "Drinks": Coffee,
+    "default": Flame
+};
+
+// --- Helper Components ---
+
+const DotIndicator = ({ isVegetarian }: { isVegetarian?: boolean }) => (
+    <div className={`w-2 h-2 rounded-full ${isVegetarian ? 'bg-green-700' : 'bg-red-700'}`} />
+);
+
+// --- Main App Component ---
 
 function OrderContent() {
     const params = useParams();
-    const router = useRouter();
     const tableId = params.tableId as string;
-    const categoryRefs = useRef<{ [key: string]: HTMLElement | null }>({});
-    const navRef = useRef<HTMLDivElement>(null);
 
-    // State
+    // Backend state
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [session, setSession] = useState<SessionData | null>(null);
     const [menu, setMenu] = useState<Category[]>([]);
-    const [cart, setCart] = useState<CartItem[]>([]);
     const [placingOrder, setPlacingOrder] = useState(false);
     const [orderSuccess, setOrderSuccess] = useState<string | null>(null);
-    const [activeCategory, setActiveCategory] = useState<string>("");
-    const [scrolled, setScrolled] = useState(false);
 
-    const cartTotal = useMemo(() => {
-        return cart.reduce((total, item) => total + (item.price * item.quantity), 0);
-    }, [cart]);
+    // UI state
+    const [activeCategory, setActiveCategory] = useState("All");
+    const [searchQuery, setSearchQuery] = useState("");
+    const [cart, setCart] = useState<{ [key: string]: number }>({});
+    const [isCartOpen, setIsCartOpen] = useState(false);
+    const [filters, setFilters] = useState({ vegOnly: false, nonVeg: false });
 
-    const cartItemCount = useMemo(() => {
-        return cart.reduce((count, item) => count + item.quantity, 0);
-    }, [cart]);
-
-    // Effects
+    // Load data from backend
     useEffect(() => {
         const loadData = async () => {
             if (!tableId) {
@@ -68,9 +92,6 @@ function OrderContent() {
                     table: data.table
                 });
                 setMenu(data.categories);
-                if (data.categories.length > 0) {
-                    setActiveCategory(data.categories[0].id);
-                }
                 setError(null);
             } catch (err: any) {
                 console.error("Error loading data:", err);
@@ -84,103 +105,73 @@ function OrderContent() {
         loadData();
     }, [tableId]);
 
-    // Header scroll background effect
-    useEffect(() => {
-        const handleScroll = () => {
-            setScrolled(window.scrollY > 20);
+    // --- Cart Logic ---
+    const handleAddToCart = (id: string) => setCart(p => ({ ...p, [id]: (p[id] || 0) + 1 }));
+    const handleRemoveFromCart = (id: string) => setCart(p => {
+        const n = { ...p };
+        if (n[id] > 1) n[id]--; else delete n[id];
+        return n;
+    });
 
-            // Scroll Spy
-            let current = "";
-            const offset = 140; // Approx header height + nav height
+    // Flatten menu items for filtering
+    const allMenuItems = useMemo(() => {
+        return menu.flatMap(cat => cat.items.map(item => ({
+            ...item,
+            category: cat.name
+        })));
+    }, [menu]);
 
-            // simple logic: find the section closest to top
-            for (const cat of menu) {
-                const element = categoryRefs.current[cat.id];
-                if (element) {
-                    const rect = element.getBoundingClientRect();
-                    if (rect.top <= offset + 50 && rect.bottom > offset) {
-                        current = cat.id;
-                        break; // Found the active one
-                    }
-                }
-            }
-            if (current && current !== activeCategory) {
-                setActiveCategory(current);
-                // Also scroll nav to active pill found via scroll
-                scrollNavToCategory(current);
-            }
-        };
-
-        window.addEventListener('scroll', handleScroll);
-        return () => window.removeEventListener('scroll', handleScroll);
-    }, [menu, activeCategory]);
-
-    const scrollNavToCategory = (categoryId: string) => {
-        if (!navRef.current) return;
-        const pill = navRef.current.querySelector(`[data-category="${categoryId}"]`) as HTMLElement;
-        if (pill) {
-            pill.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-        }
-    }
-
-    // Handlers
-    const scrollToCategory = (categoryId: string) => {
-        setActiveCategory(categoryId);
-        const element = categoryRefs.current[categoryId];
-        if (element) {
-            const headerOffset = 130;
-            const elementPosition = element.getBoundingClientRect().top;
-            const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
-
-            window.scrollTo({
-                top: offsetPosition,
-                behavior: 'smooth'
+    // Get unique categories from menu data
+    const categories = useMemo(() => {
+        const cats = [{ id: "All", label: "All", icon: CATEGORY_ICONS["All"] || Sparkles }];
+        menu.forEach(cat => {
+            cats.push({
+                id: cat.name,
+                label: cat.name,
+                icon: CATEGORY_ICONS[cat.name] || CATEGORY_ICONS["default"]
             });
-        }
-    };
-
-    const addToCart = (item: MenuItem) => {
-        setCart(prev => {
-            const existing = prev.find(i => i.id === item.id);
-            if (existing) {
-                return prev.map(i => i.id === item.id ? { ...i, quantity: i.quantity + 1 } : i);
-            }
-            return [...prev, { ...item, quantity: 1 }];
         });
-    };
+        return cats;
+    }, [menu]);
 
-    const removeFromCart = (itemId: string) => {
-        setCart(prev => {
-            const existing = prev.find(i => i.id === itemId);
-            if (!existing) return prev;
-
-            if (existing.quantity > 1) {
-                return prev.map(i => i.id === itemId ? { ...i, quantity: i.quantity - 1 } : i);
-            }
-            return prev.filter(i => i.id !== itemId);
+    const filteredItems = useMemo(() => {
+        return allMenuItems.filter(item => {
+            if (activeCategory !== "All" && item.category !== activeCategory) return false;
+            if (searchQuery && !item.name.toLowerCase().includes(searchQuery.toLowerCase())) return false;
+            if (filters.vegOnly && !item.isVegetarian) return false;
+            if (filters.nonVeg && item.isVegetarian) return false;
+            if (!item.isAvailable) return false; // Hide unavailable items
+            return true;
         });
-    };
+    }, [allMenuItems, activeCategory, searchQuery, filters]);
 
-    const getItemQuantity = (itemId: string) => {
-        return cart.find(i => i.id === itemId)?.quantity || 0;
-    };
+    const cartTotal = Object.entries(cart).reduce((acc, [id, qty]) => {
+        const item = allMenuItems.find(i => i.id === id);
+        return acc + (item ? item.price * qty : 0);
+    }, 0);
 
+    const cartItemCount = Object.values(cart).reduce((a, b) => a + b, 0);
+
+    // --- Order Placement ---
     const handlePlaceOrder = async () => {
-        if (cart.length === 0) return;
-
-        if (!window.confirm(`Place order for ₹${cartTotal}?`)) return;
+        if (cartItemCount === 0) return;
 
         setPlacingOrder(true);
+        setIsCartOpen(false);
+
         try {
-            const orderItems = cart.map(item => ({
-                menuItemId: item.id,
-                quantity: item.quantity,
-                price: item.price
-            }));
+            const orderItems = Object.entries(cart).map(([id, qty]) => {
+                const item = allMenuItems.find(i => i.id === id);
+                return {
+                    menuItemId: id,
+                    quantity: qty,
+                    price: item?.price || 0
+                };
+            });
 
             const result = await placeOrder(orderItems, cartTotal);
 
-            setCart([]);
+            setCart({});
             setOrderSuccess(result.orderNumber || 'placed');
 
             setTimeout(() => {
@@ -194,19 +185,12 @@ function OrderContent() {
         }
     };
 
-    // Helper: Image Placeholder
-    const ImagePlaceholder = () => (
-        <div className="w-full h-full flex items-center justify-center bg-[#F5F5F5] text-gray-400">
-            <Utensils size={24} strokeWidth={1.5} />
-        </div>
-    );
-
     // Loading State
     if (loading) {
         return (
-            <div className="flex flex-col items-center justify-center min-h-screen bg-[#F9F9F9]">
-                <Loader2 className="w-8 h-8 animate-spin text-[#8A1538] mb-3" />
-                <p className="font-medium text-gray-500">Loading Menu...</p>
+            <div className="flex flex-col items-center justify-center min-h-screen" style={{ backgroundColor: THEME.bg }}>
+                <Loader2 className="w-8 h-8 animate-spin mb-3" style={{ color: THEME.primary }} />
+                <p className="font-medium" style={{ color: THEME.textMuted }}>Loading Menu...</p>
             </div>
         );
     }
@@ -214,15 +198,16 @@ function OrderContent() {
     // Error State
     if (error) {
         return (
-            <div className="flex flex-col items-center justify-center min-h-screen p-6 text-center bg-[#F9F9F9]">
-                <div className="w-16 h-16 rounded-full bg-red-50 flex items-center justify-center mb-4 text-[#D32F2F]">
+            <div className="flex flex-col items-center justify-center min-h-screen p-6 text-center" style={{ backgroundColor: THEME.bg }}>
+                <div className="w-16 h-16 rounded-full bg-red-50 flex items-center justify-center mb-4" style={{ color: THEME.nonVeg }}>
                     <AlertCircle className="w-8 h-8" />
                 </div>
-                <h3 className="text-lg font-bold text-gray-800 mb-2">Unavailable</h3>
-                <p className="text-gray-500 mb-6 max-w-xs">{error}</p>
+                <h3 className="text-lg font-bold mb-2" style={{ color: THEME.text }}>Unavailable</h3>
+                <p className="mb-6 max-w-xs" style={{ color: THEME.textMuted }}>{error}</p>
                 <button
                     onClick={() => window.location.reload()}
-                    className="px-6 py-3 rounded-lg font-bold text-white bg-[#8A1538]"
+                    className="px-6 py-3 rounded-lg font-bold text-white"
+                    style={{ backgroundColor: THEME.primary }}
                 >
                     Retry
                 </button>
@@ -230,215 +215,261 @@ function OrderContent() {
         );
     }
 
+    // --- Render ---
+
     return (
-        <div className="min-h-screen pb-28 font-sans" style={{ backgroundColor: theme.background }}>
+        <div className="absolute inset-0 flex flex-col font-sans select-none overflow-hidden"
+            style={{ backgroundColor: THEME.bg, color: THEME.text }}>
 
-            {/* 1. Header Section */}
-            <header
-                className={`sticky top-0 z-50 transition-all duration-200 border-b border-transparent ${scrolled ? 'bg-white shadow-sm border-gray-100' : 'bg-[#F9F9F9]'}`}
-            >
-                {/* Top Row: Restaurant Info & Table Badge */}
-                <div className="px-4 py-3 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                        {/* Optional Back Button */}
-                        {/* <button className="p-1.5 -ml-2 rounded-full hover:bg-black/5">
-                            <ArrowLeft size={22} className="text-gray-700" />
-                        </button> */}
+            {/* Background Ambience */}
+            <div className="absolute top-[-20%] left-[-20%] w-[60%] h-[50%] bg-white/40 blur-[120px] rounded-full pointer-events-none" />
+            <div className="absolute bottom-[-20%] right-[-20%] w-[60%] h-[50%] bg-yellow-500/10 blur-[120px] rounded-full pointer-events-none" />
 
-                        <div className="flex items-center gap-2.5">
-                            <div className="w-10 h-10 rounded-lg bg-white shadow-sm border border-gray-100 flex items-center justify-center text-[#8A1538]">
-                                <ChefHat size={20} fill="#8A1538" className="text-[#8A1538]" />
-                            </div>
-                            <div className="flex flex-col">
-                                <h1 className="text-lg font-bold text-[#333] leading-tight line-clamp-1">
-                                    {session?.restaurant.name || 'Restaurant'}
-                                </h1>
-                                <span className="text-xs text-gray-500">
-                                    Fine Dining • North Indian
-                                </span>
-                            </div>
-                        </div>
+            {/* Header */}
+            <div className="flex-none z-40 relative">
+                <div className="px-6 pt-8 pb-2 flex justify-between items-end">
+                    <div>
+                        <h2 className="text-xs font-bold uppercase tracking-[0.2em] mb-1" style={{ color: THEME.secondary }}>
+                            {session?.restaurant.name || 'Fine Dining'}
+                        </h2>
+                        <h1 className="text-3xl font-light tracking-tight" style={{ color: THEME.text }}>
+                            Gourmet<span className="font-bold">Menu</span><span style={{ color: THEME.primary }}>.</span>
+                        </h1>
                     </div>
-
-                    {/* Table Badge */}
-                    <div className="flex items-center gap-1 bg-[#E8F5E9] border border-[#C8E6C9] px-2.5 py-1 rounded-md">
-                        <span className="w-1.5 h-1.5 rounded-full bg-[#2D9F5D] animate-pulse" />
-                        <span className="text-xs font-bold text-[#1B5E20] uppercase tracking-wide">
-                            Table {session?.table.number}
-                        </span>
+                    <div className="flex items-center gap-2">
+                        {/* Table Badge */}
+                        <div className="flex items-center gap-1 bg-green-50 border border-green-200 px-2.5 py-1.5 rounded-lg">
+                            <span className="w-1.5 h-1.5 rounded-full bg-green-600 animate-pulse" />
+                            <span className="text-xs font-bold text-green-800 uppercase tracking-wide">
+                                Table {session?.table.number}
+                            </span>
+                        </div>
                     </div>
                 </div>
 
-                {/* 2. Category Pills (Horizontal Scroll) */}
-                <div className="px-4 pb-3 pt-1 w-full overflow-x-hidden">
-                    <div
-                        ref={navRef}
-                        className="flex gap-2.5 overflow-x-auto scrollbar-hide pb-1"
-                    >
-                        {menu.map((category) => {
-                            const isActive = activeCategory === category.id;
+                {/* Categories (Floating Pills) */}
+                <div className="overflow-x-auto no-scrollbar pt-6 pb-2 pl-6">
+                    <div className="flex gap-4 min-w-max pr-6">
+                        {categories.map(cat => {
+                            const isActive = activeCategory === cat.id;
+                            const Icon = cat.icon;
                             return (
                                 <button
-                                    key={category.id}
-                                    data-category={category.id}
-                                    onClick={() => scrollToCategory(category.id)}
-                                    className={`flex-none px-4 py-2 rounded-full text-sm font-semibold transition-all whitespace-nowrap border
-                                        ${isActive
-                                            ? 'bg-[#333] text-white border-[#333] shadow-md transform scale-[1.02]'
-                                            : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
-                                        }`}
+                                    key={cat.id}
+                                    onClick={() => setActiveCategory(cat.id)}
+                                    className="flex flex-col items-center gap-2 min-w-[72px] transition-all duration-300 group"
                                 >
-                                    {category.name}
+                                    <div
+                                        className={`
+                      w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-300 relative overflow-hidden shadow-sm
+                      ${isActive ? 'scale-110' : 'bg-white border border-gray-100 hover:border-wine/20'}
+                    `}
+                                        style={{
+                                            backgroundColor: isActive ? THEME.primary : THEME.surface,
+                                            color: isActive ? 'white' : THEME.textMuted
+                                        }}
+                                    >
+                                        <Icon size={22} strokeWidth={isActive ? 2.5 : 1.5} />
+                                    </div>
+                                    <span
+                                        className="text-[10px] font-medium tracking-wide transition-colors"
+                                        style={{ color: isActive ? THEME.primary : THEME.textMuted }}
+                                    >
+                                        {cat.label}
+                                    </span>
                                 </button>
                             );
                         })}
                     </div>
                 </div>
-            </header>
 
-            {/* 3. Menu Items List */}
-            <main className="px-4 py-2 space-y-6">
-                {menu.map((category) => (
-                    <section
-                        key={category.id}
-                        id={category.id}
-                        ref={(el) => { categoryRefs.current[category.id] = el }}
-                        className="scroll-mt-36"
+                {/* Quick Filter Bar */}
+                <div className="px-6 mt-2 flex gap-3 overflow-x-auto no-scrollbar">
+                    <button
+                        onClick={() => setFilters(p => ({ vegOnly: !p.vegOnly, nonVeg: false }))}
+                        className={`px-4 py-2 rounded-full text-[10px] font-bold uppercase tracking-widest border transition-all ${filters.vegOnly ? 'bg-green-50 border-green-600 text-green-700' : 'bg-transparent border-gray-300 text-gray-500'}`}
                     >
-                        <h2 className="text-lg font-bold text-[#333] mb-3 px-1">
-                            {category.name}
-                        </h2>
+                        Veg Only
+                    </button>
+                    <button
+                        onClick={() => setFilters(p => ({ nonVeg: !p.nonVeg, vegOnly: false }))}
+                        className={`px-4 py-2 rounded-full text-[10px] font-bold uppercase tracking-widest border transition-all ${filters.nonVeg ? 'bg-red-50 border-red-600 text-red-700' : 'bg-transparent border-gray-300 text-gray-500'}`}
+                    >
+                        Non-Veg Only
+                    </button>
+                </div>
+            </div>
 
-                        <div className="space-y-4">
-                            {category.items.map((item) => {
-                                const qty = getItemQuantity(item.id);
-                                return (
-                                    <div
-                                        key={item.id}
-                                        className="bg-white rounded-xl p-3 shadow-sm border border-gray-100 w-full"
-                                    >
-                                        <div className="flex gap-3">
-                                            {/* Left: Image (Square 96x96) */}
-                                            <div className="relative w-24 h-24 rounded-lg overflow-hidden flex-shrink-0 border border-gray-100">
-                                                {item.image ? (
-                                                    <Image
-                                                        src={item.image}
-                                                        alt={item.name}
-                                                        fill
-                                                        className="object-cover"
-                                                    />
-                                                ) : (
-                                                    <ImagePlaceholder />
-                                                )}
-                                                {!item.isAvailable && (
-                                                    <div className="absolute inset-0 bg-white/80 backdrop-blur-[1px] flex items-center justify-center p-1 text-center">
-                                                        <span className="text-[10px] font-bold text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded border border-gray-200">
-                                                            SOLD OUT
-                                                        </span>
-                                                    </div>
-                                                )}
-                                            </div>
+            {/* Main Content */}
+            <main className="flex-1 overflow-y-auto px-6 pt-6 pb-32 w-full overscroll-contain no-scrollbar relative z-10">
 
-                                            {/* Right: Details */}
-                                            <div className="flex-1 flex flex-col justify-between py-0.5 min-w-0">
-                                                <div>
-                                                    <div className="flex items-start justify-between gap-1">
-                                                        <h3 className="font-bold text-[16px] text-[#333] leading-snug line-clamp-2">
-                                                            {item.name}
-                                                        </h3>
-                                                    </div>
-                                                    <p className="text-[13px] text-gray-500 mt-1 line-clamp-2 leading-relaxed">
-                                                        {item.description || "Freshly prepared with authentic ingredients."}
-                                                    </p>
-                                                </div>
+                {filteredItems.length === 0 ? (
+                    <div className="h-64 flex flex-col items-center justify-center text-center opacity-40">
+                        <Utensils size={48} className="mb-4" style={{ color: THEME.textMuted }} />
+                        <p className="font-light" style={{ color: THEME.textMuted }}>Our chefs are resting.<br />Try different filters.</p>
+                    </div>
+                ) : (
+                    <div className="space-y-6">
+                        {filteredItems.map((item, index) => (
+                            <div
+                                key={item.id}
+                                className="group relative bg-white rounded-3xl p-5 shadow-sm border border-transparent hover:border-wine/10 hover:shadow-md transition-all duration-300 animate-fade-in-up"
+                                style={{ animationDelay: `${index * 50}ms`, borderColor: THEME.border }}
+                            >
+                                <div className="relative z-10 flex justify-between gap-4">
+                                    <div className="flex-1">
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <DotIndicator isVegetarian={item.isVegetarian} />
+                                            <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: THEME.textMuted }}>{item.category}</span>
+                                        </div>
+                                        <h3 className="text-lg font-medium mb-2 leading-tight" style={{ color: THEME.text }}>{item.name}</h3>
+                                        <p className="text-sm leading-relaxed line-clamp-2" style={{ color: THEME.textMuted }}>{item.description || "Freshly prepared with authentic ingredients."}</p>
 
-                                                <div className="flex items-center justify-between mt-2.5">
-                                                    <span className="font-bold text-[16px] text-[#333]">
-                                                        ₹{item.price}
-                                                    </span>
-
-                                                    {/* Add Button Area */}
-                                                    <div className="relative z-10">
-                                                        {qty === 0 ? (
-                                                            <button
-                                                                onClick={() => addToCart(item)}
-                                                                disabled={!item.isAvailable}
-                                                                className="w-8 h-8 rounded-full flex items-center justify-center shadow-md active:scale-95 transition-all text-white disabled:opacity-50 disabled:grayscale"
-                                                                style={{ backgroundColor: theme.primary }}
-                                                            >
-                                                                <Plus size={18} strokeWidth={3} />
-                                                            </button>
-                                                        ) : (
-                                                            <div className="flex items-center h-8 bg-white border border-gray-200 rounded-full shadow-sm overflow-hidden">
-                                                                <button
-                                                                    onClick={() => removeFromCart(item.id)}
-                                                                    className="w-8 h-full flex items-center justify-center text-[#8A1538] hover:bg-red-50 active:bg-red-100 transition-colors"
-                                                                >
-                                                                    <Minus size={16} strokeWidth={3} />
-                                                                </button>
-                                                                <span className="min-w-[20px] text-center font-bold text-sm text-[#333]">
-                                                                    {qty}
-                                                                </span>
-                                                                <button
-                                                                    onClick={() => addToCart(item)}
-                                                                    className="w-8 h-full flex items-center justify-center text-[#8A1538] hover:bg-red-50 active:bg-red-100 transition-colors"
-                                                                >
-                                                                    <Plus size={16} strokeWidth={3} />
-                                                                </button>
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            </div>
+                                        <div className="mt-4 flex items-center gap-3">
+                                            <span className="text-xl font-light" style={{ color: THEME.primary }}>₹{Math.floor(item.price)}<span className="text-sm text-gray-400">.00</span></span>
                                         </div>
                                     </div>
-                                );
-                            })}
-                        </div>
-                    </section>
-                ))}
 
-                {menu.length > 0 && (
-                    <div className="py-8 text-center">
-                        <div className="w-12 h-[1px] bg-gray-300 mx-auto mb-3" />
-                        <p className="text-xs text-gray-400 font-medium tracking-wide uppercase">
-                            End of Menu
-                        </p>
-                        <p className="text-[10px] text-gray-300 mt-1">
-                            Powered by DineStack
-                        </p>
+                                    {/* Interactive Add Button Column */}
+                                    <div className="flex flex-col justify-end items-end">
+                                        {cart[item.id] ? (
+                                            <div className="flex flex-col items-center rounded-2xl p-1 gap-2 shadow-sm border border-gray-100" style={{ backgroundColor: '#F8F8F8' }}>
+                                                <button
+                                                    onClick={() => handleAddToCart(item.id)}
+                                                    className="w-8 h-8 flex items-center justify-center rounded-xl text-white hover:opacity-90 active:scale-90 transition-all"
+                                                    style={{ backgroundColor: THEME.primary }}
+                                                >
+                                                    <Plus size={16} strokeWidth={3} />
+                                                </button>
+                                                <span className="font-bold text-sm py-1" style={{ color: THEME.text }}>{cart[item.id]}</span>
+                                                <button
+                                                    onClick={() => handleRemoveFromCart(item.id)}
+                                                    className="w-8 h-8 flex items-center justify-center bg-white text-gray-500 rounded-xl hover:bg-gray-100 active:scale-90 transition-all shadow-sm"
+                                                >
+                                                    <Minus size={16} strokeWidth={3} />
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <button
+                                                onClick={() => handleAddToCart(item.id)}
+                                                className="w-10 h-10 flex items-center justify-center border rounded-2xl hover:scale-105 active:scale-95 transition-all shadow-sm group/btn"
+                                                style={{
+                                                    borderColor: THEME.border,
+                                                    color: THEME.primary,
+                                                    backgroundColor: THEME.surface
+                                                }}
+                                            >
+                                                <Plus size={20} />
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
                     </div>
                 )}
             </main>
 
-            {/* 4. Sticky Cart Bar */}
-            {cartItemCount > 0 && (
-                <div className="fixed bottom-0 left-0 right-0 z-50 p-4 bg-gradient-to-t from-white via-white to-transparent pb-6">
-                    <div className="max-w-md mx-auto">
-                        <button
-                            onClick={handlePlaceOrder}
-                            disabled={placingOrder}
-                            className="w-full relative overflow-hidden rounded-xl shadow-lg transition-transform active:scale-[0.98] flex items-center justify-between p-0 bg-[#8A1538]"
-                        >
-                            {/* Left: Item Count & Price */}
-                            <div className="flex flex-col justify-center px-5 py-3.5 bg-[#6D0F2E]/30 h-full border-r border-white/10">
-                                <span className="text-[11px] font-medium text-white/80 uppercase tracking-wider">
-                                    {cartItemCount} {cartItemCount === 1 ? 'ITEM' : 'ITEMS'}
-                                </span>
-                                <span className="text-lg font-bold text-white leading-none mt-0.5">
-                                    ₹{cartTotal.toFixed(0)}
-                                </span>
-                            </div>
+            {/* Floating Glass Cart */}
+            {cartItemCount > 0 && !isCartOpen && (
+                <div className="absolute bottom-8 left-6 right-6 z-50 animate-bounce-in">
+                    <button
+                        onClick={() => setIsCartOpen(true)}
+                        className="w-full h-16 relative overflow-hidden rounded-2xl shadow-xl flex items-center justify-between px-1 group active:scale-[0.98] transition-transform"
+                        style={{
+                            backgroundColor: THEME.primary,
+                            color: 'white',
+                            boxShadow: '0 10px 30px -10px rgba(139, 30, 63, 0.5)'
+                        }}
+                    >
+                        {/* Sheen */}
+                        <div className="absolute inset-0 bg-gradient-to-b from-white/10 to-transparent pointer-events-none" />
 
-                            {/* Right: Action Text */}
-                            <div className="flex-1 flex items-center justify-center gap-2 pr-2">
-                                <span className="font-bold text-white text-[16px] tracking-wide">
-                                    {placingOrder ? 'Sending Order...' : 'Place Order'}
-                                </span>
-                                {!placingOrder && <ArrowRight size={18} className="text-white" strokeWidth={3} />}
-                                {placingOrder && <Loader2 size={18} className="text-white animate-spin" />}
+                        <div className="flex items-center gap-4 pl-4 relative z-10">
+                            <div className="bg-white/20 px-3 py-1.5 rounded-lg flex flex-col leading-none">
+                                <span className="text-[10px] text-white/80 font-bold uppercase">Items</span>
+                                <span className="text-lg font-bold text-white">{cartItemCount}</span>
                             </div>
-                        </button>
+                            <div className="flex flex-col items-start leading-none">
+                                <span className="text-[10px] text-white/80 font-bold uppercase tracking-wider">Total</span>
+                                <span className="text-xl font-black text-white">₹{cartTotal.toFixed(2)}</span>
+                            </div>
+                        </div>
+
+                        <div className="pr-5 relative z-10 flex items-center gap-2 text-white font-bold text-sm uppercase tracking-wide">
+                            Checkout <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform" />
+                        </div>
+                    </button>
+                </div>
+            )}
+
+            {/* Cart Modal (Sheet) */}
+            {isCartOpen && (
+                <div className="absolute inset-0 z-50 flex flex-col justify-end bg-black/60 backdrop-blur-sm animate-fade-in">
+                    <div className="absolute inset-0" onClick={() => setIsCartOpen(false)} />
+
+                    <div className="w-full bg-white rounded-t-[40px] max-h-[85vh] flex flex-col shadow-2xl animate-slide-up relative" style={{ backgroundColor: '#FFFBEA' }}>
+
+                        {/* Handle */}
+                        <div className="w-full flex justify-center pt-4 pb-2" onClick={() => setIsCartOpen(false)}>
+                            <div className="w-16 h-1 bg-gray-300 rounded-full" />
+                        </div>
+
+                        <div className="px-8 py-4 flex items-center justify-between">
+                            <h2 className="text-2xl font-light" style={{ color: THEME.text }}>Your <span className="font-bold" style={{ color: THEME.primary }}>Order</span></h2>
+                            <button onClick={() => setIsCartOpen(false)} className="bg-gray-100 p-2 rounded-full text-gray-500 hover:text-gray-900 transition-colors">
+                                <X size={20} />
+                            </button>
+                        </div>
+
+                        {/* Cart Items */}
+                        <div className="flex-1 overflow-y-auto px-8 py-2 space-y-6">
+                            {Object.entries(cart).map(([id, qty]) => {
+                                const item = allMenuItems.find(i => i.id === id);
+                                return item ? (
+                                    <div key={id} className="flex justify-between items-center group">
+                                        <div className="flex flex-col">
+                                            <div className="flex items-center gap-2 mb-1">
+                                                <DotIndicator isVegetarian={item.isVegetarian} />
+                                                <span className="font-medium text-lg" style={{ color: THEME.text }}>{item.name}</span>
+                                            </div>
+                                            <span className="font-bold text-sm" style={{ color: THEME.primary }}>₹{(item.price * qty).toFixed(2)}</span>
+                                        </div>
+
+                                        <div className="flex items-center bg-white rounded-xl border p-1" style={{ borderColor: THEME.border }}>
+                                            <button onClick={() => handleRemoveFromCart(item.id)} className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"><Minus size={14} /></button>
+                                            <span className="w-8 text-center text-sm font-bold" style={{ color: THEME.text }}>{qty}</span>
+                                            <button onClick={() => handleAddToCart(item.id)} className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-green-500 hover:bg-green-50 rounded-lg transition-colors"><Plus size={14} /></button>
+                                        </div>
+                                    </div>
+                                ) : null;
+                            })}
+                        </div>
+
+                        {/* Checkout Area */}
+                        <div className="p-8 pb-safe rounded-t-[40px] mt-2 border-t border-gray-100 bg-white">
+                            <div className="flex justify-between items-center mb-6">
+                                <span className="text-gray-400 font-medium">Grand Total</span>
+                                <span className="text-3xl font-light" style={{ color: THEME.text }}>₹{cartTotal.toFixed(2)}</span>
+                            </div>
+                            <button
+                                onClick={handlePlaceOrder}
+                                disabled={placingOrder}
+                                className="w-full text-white h-16 rounded-2xl font-bold text-lg uppercase tracking-widest shadow-lg active:scale-[0.98] transition-all flex items-center justify-center gap-2 group disabled:opacity-70"
+                                style={{ backgroundColor: THEME.primary }}
+                            >
+                                {placingOrder ? (
+                                    <>
+                                        <Loader2 className="animate-spin" size={20} />
+                                        Placing Order...
+                                    </>
+                                ) : (
+                                    <>
+                                        Confirm Order <ChevronRight className="group-hover:translate-x-1 transition-transform" />
+                                    </>
+                                )}
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}
@@ -446,7 +477,7 @@ function OrderContent() {
             {/* Order Success Toast */}
             {orderSuccess && (
                 <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[60] w-[90%] max-w-sm animate-in slide-in-from-top-4 fade-in duration-300">
-                    <div className="bg-[#2D9F5D] text-white px-4 py-3 rounded-xl shadow-xl flex items-center gap-3">
+                    <div className="bg-green-600 text-white px-4 py-3 rounded-xl shadow-xl flex items-center gap-3">
                         <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center shrink-0">
                             <CheckCircle2 size={18} className="text-white" />
                         </div>
@@ -457,6 +488,38 @@ function OrderContent() {
                     </div>
                 </div>
             )}
+
+            {/* Global CSS */}
+            <style>{`
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .pb-safe { padding-bottom: env(safe-area-inset-bottom, 32px); }
+        
+        @keyframes fade-in-up {
+          from { opacity: 0; transform: translateY(20px); filter: blur(10px); }
+          to { opacity: 1; transform: translateY(0); filter: blur(0); }
+        }
+        .animate-fade-in-up { animation: fade-in-up 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+
+        @keyframes slide-up {
+          from { transform: translateY(100%); }
+          to { transform: translateY(0); }
+        }
+        .animate-slide-up { animation: slide-up 0.5s cubic-bezier(0.19, 1, 0.22, 1) forwards; }
+
+        @keyframes bounce-in {
+            0% { transform: scale(0.9) translateY(20px); opacity: 0; }
+            50% { transform: scale(1.05) translateY(-5px); opacity: 1; }
+            100% { transform: scale(1) translateY(0); opacity: 1; }
+        }
+        .animate-bounce-in { animation: bounce-in 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+
+        @keyframes fade-in {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        .animate-fade-in { animation: fade-in 0.3s ease-out forwards; }
+      `}</style>
         </div>
     );
 }
@@ -464,8 +527,8 @@ function OrderContent() {
 export default function TableOrderPage() {
     return (
         <Suspense fallback={
-            <div className="flex flex-col justify-center items-center min-h-screen bg-[#F9F9F9]">
-                <Loader2 className="animate-spin w-8 h-8 text-[#8A1538]" />
+            <div className="flex flex-col justify-center items-center min-h-screen" style={{ backgroundColor: '#FFFBEA' }}>
+                <Loader2 className="animate-spin w-8 h-8" style={{ color: '#8B1E3F' }} />
             </div>
         }>
             <OrderContent />
