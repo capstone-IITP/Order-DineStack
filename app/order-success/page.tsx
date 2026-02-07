@@ -2,8 +2,9 @@
 
 import React, { Suspense, useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { CheckCircle2, Clock, ChefHat, ArrowRight } from 'lucide-react';
+import { CheckCircle2, Clock, ChefHat, ArrowRight, Utensils } from 'lucide-react';
 import Link from 'next/link';
+import { getOrderStatus } from '@/lib/api';
 
 // --- Configuration ---
 const THEME = {
@@ -25,6 +26,9 @@ function SuccessContent() {
     const orderId = searchParams.get('orderId');
     const eta = searchParams.get('eta');
 
+    // State for order status
+    const [status, setStatus] = useState<string>('RECEIVED');
+
     // Prevent back navigation to order page
     useEffect(() => {
         window.history.pushState(null, '', window.location.href);
@@ -34,6 +38,43 @@ function SuccessContent() {
         window.addEventListener('popstate', handlePopState);
         return () => window.removeEventListener('popstate', handlePopState);
     }, []);
+
+    // Polling Logic
+    useEffect(() => {
+        if (!orderId) return;
+
+        const pollStatus = async () => {
+            try {
+                const data = await getOrderStatus(orderId);
+                if (data.success && data.order) {
+                    setStatus(data.order.status);
+
+                    // Stop polling if served or completed
+                    if (['SERVED', 'COMPLETED', 'CANCELLED'].includes(data.order.status)) {
+                        return true; // Signal to stop
+                    }
+                }
+            } catch (error) {
+                console.error('Error polling status:', error);
+            }
+            return false;
+        };
+
+        // Initial check
+        pollStatus();
+
+        // Set up interval
+        const intervalId = setInterval(async () => {
+            const shouldStop = await pollStatus();
+            if (shouldStop) {
+                clearInterval(intervalId);
+            }
+        }, 5000);
+
+        return () => clearInterval(intervalId);
+    }, [orderId]);
+
+
 
     // Strict check: if orderId is missing, show error state
     if (!orderId) {
@@ -88,17 +129,31 @@ function SuccessContent() {
                     </p>
                 </div>
 
-                {/* Action Button - In future could link to order status page */}
-                <button
-                    disabled
-                    className="w-full py-4 rounded-xl font-bold text-white flex items-center justify-center gap-2 opacity-90 cursor-default"
-                    style={{ backgroundColor: THEME.primary }}
-                >
-                    Preparing...
-                </button>
+                {/* Action Button / Status Indicator */}
+                <div className="w-full">
+                    {status === 'READY' ? (
+                        <div className="w-full py-4 rounded-xl font-bold text-white flex items-center justify-center gap-2 shadow-lg animate-bounce"
+                            style={{ backgroundColor: THEME.success }}>
+                            <Utensils size={20} />
+                            Ready! Please Pick Up
+                        </div>
+                    ) : status === 'SERVED' || status === 'COMPLETED' ? (
+                        <div className="w-full py-4 rounded-xl font-bold text-white flex items-center justify-center gap-2 opacity-90"
+                            style={{ backgroundColor: THEME.secondary }}>
+                            <CheckCircle2 size={20} />
+                            Enjoy your meal!
+                        </div>
+                    ) : (
+                        <div className="w-full py-4 rounded-xl font-bold text-white flex items-center justify-center gap-2 opacity-90 cursor-default animate-pulse-slow"
+                            style={{ backgroundColor: THEME.primary }}>
+                            <ChefHat size={20} />
+                            Preparing...
+                        </div>
+                    )}
+                </div>
 
                 <p className="mt-6 text-[10px] text-gray-400 uppercase tracking-widest font-medium">
-                    Do not refresh this page
+                    Status updates automatically
                 </p>
 
             </div>
@@ -116,6 +171,14 @@ function SuccessContent() {
                     100% { transform: scale(1); }
                 }
                 .animate-bounce-in { animation: bounce-in 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards 0.2s; opacity: 0; animation-fill-mode: forwards; }
+                
+                @keyframes pulse-slow {
+                    0%, 100% { opacity: 1; }
+                    50% { opacity: 0.8; }
+                }
+                .animate-pulse-slow { animation: pulse-slow 2s ease-in-out infinite; }
+                
+
             `}</style>
         </div>
     );
