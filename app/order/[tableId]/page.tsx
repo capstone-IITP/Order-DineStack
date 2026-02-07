@@ -1,10 +1,24 @@
 "use client";
 
 import React, { useEffect, useState, useMemo, Suspense, useRef } from 'react';
-import { useParams } from 'next/navigation';
-import { Minus, Plus, AlertCircle, CheckCircle2, Loader2, Utensils, ArrowRight } from 'lucide-react';
+import { useParams, useRouter } from 'next/navigation';
+import { ShoppingBag, Minus, Plus, AlertCircle, CheckCircle2, Loader2, Utensils, ChefHat, Search, ArrowRight, ArrowLeft, Star } from 'lucide-react';
 import { getTableInfo, placeOrder, SessionData, Category, MenuItem } from '@/lib/api';
 import Image from 'next/image';
+
+// Delivery App Style Theme
+const theme = {
+    background: '#F9F9F9',
+    primary: '#8A1538', // Burgundy/Maroon BRAND color
+    textPrimary: '#333333',
+    textSecondary: '#666666',
+    white: '#FFFFFF',
+    border: '#E0E0E0',
+    success: '#2D9F5D',
+    activePill: '#8A1538',
+    inactivePill: '#FFFFFF',
+    danger: '#D32F2F'
+};
 
 interface CartItem extends MenuItem {
     quantity: number;
@@ -12,6 +26,7 @@ interface CartItem extends MenuItem {
 
 function OrderContent() {
     const params = useParams();
+    const router = useRouter();
     const tableId = params.tableId as string;
     const categoryRefs = useRef<{ [key: string]: HTMLElement | null }>({});
     const navRef = useRef<HTMLDivElement>(null);
@@ -25,6 +40,7 @@ function OrderContent() {
     const [placingOrder, setPlacingOrder] = useState(false);
     const [orderSuccess, setOrderSuccess] = useState<string | null>(null);
     const [activeCategory, setActiveCategory] = useState<string>("");
+    const [scrolled, setScrolled] = useState(false);
 
     const cartTotal = useMemo(() => {
         return cart.reduce((total, item) => total + (item.price * item.quantity), 0);
@@ -34,7 +50,7 @@ function OrderContent() {
         return cart.reduce((count, item) => count + item.quantity, 0);
     }, [cart]);
 
-    // Load data on mount
+    // Effects
     useEffect(() => {
         const loadData = async () => {
             if (!tableId) {
@@ -68,24 +84,29 @@ function OrderContent() {
         loadData();
     }, [tableId]);
 
-    // Scroll spy for category navigation
+    // Header scroll background effect
     useEffect(() => {
         const handleScroll = () => {
-            let current = "";
-            const offset = 180; // Header height offset
+            setScrolled(window.scrollY > 20);
 
+            // Scroll Spy
+            let current = "";
+            const offset = 140; // Approx header height + nav height
+
+            // simple logic: find the section closest to top
             for (const cat of menu) {
                 const element = categoryRefs.current[cat.id];
                 if (element) {
                     const rect = element.getBoundingClientRect();
                     if (rect.top <= offset + 50 && rect.bottom > offset) {
                         current = cat.id;
-                        break;
+                        break; // Found the active one
                     }
                 }
             }
             if (current && current !== activeCategory) {
                 setActiveCategory(current);
+                // Also scroll nav to active pill found via scroll
                 scrollNavToCategory(current);
             }
         };
@@ -100,13 +121,14 @@ function OrderContent() {
         if (pill) {
             pill.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
         }
-    };
+    }
 
+    // Handlers
     const scrollToCategory = (categoryId: string) => {
         setActiveCategory(categoryId);
         const element = categoryRefs.current[categoryId];
         if (element) {
-            const headerOffset = 175;
+            const headerOffset = 130;
             const elementPosition = element.getBoundingClientRect().top;
             const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
 
@@ -172,413 +194,265 @@ function OrderContent() {
         }
     };
 
-    // Image Placeholder Component
+    // Helper: Image Placeholder
     const ImagePlaceholder = () => (
-        <div className="w-full h-full flex items-center justify-center" style={{ background: 'var(--ds-cream-dark)' }}>
-            <Utensils size={22} strokeWidth={1.5} style={{ color: 'var(--ds-text-light)' }} />
+        <div className="w-full h-full flex items-center justify-center bg-[#F5F5F5] text-gray-400">
+            <Utensils size={24} strokeWidth={1.5} />
         </div>
     );
 
-    // =========================================
-    // LOADING STATE
-    // =========================================
+    // Loading State
     if (loading) {
         return (
-            <div className="ds-loading">
-                <div className="ds-loading-spinner" />
-                <p className="ds-loading-text">Loading Menu...</p>
+            <div className="flex flex-col items-center justify-center min-h-screen bg-[#F9F9F9]">
+                <Loader2 className="w-8 h-8 animate-spin text-[#8A1538] mb-3" />
+                <p className="font-medium text-gray-500">Loading Menu...</p>
             </div>
         );
     }
 
-    // =========================================
-    // ERROR STATE
-    // =========================================
+    // Error State
     if (error) {
         return (
-            <div className="ds-error">
-                <div style={{
-                    width: '72px',
-                    height: '72px',
-                    borderRadius: '50%',
-                    background: 'rgba(196, 59, 59, 0.1)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginBottom: '20px'
-                }}>
-                    <AlertCircle size={32} style={{ color: 'var(--ds-danger)' }} />
+            <div className="flex flex-col items-center justify-center min-h-screen p-6 text-center bg-[#F9F9F9]">
+                <div className="w-16 h-16 rounded-full bg-red-50 flex items-center justify-center mb-4 text-[#D32F2F]">
+                    <AlertCircle className="w-8 h-8" />
                 </div>
-                <h3 style={{
-                    fontFamily: 'var(--font-body)',
-                    fontSize: '1.25rem',
-                    fontWeight: 700,
-                    color: 'var(--ds-text-primary)',
-                    marginBottom: '8px'
-                }}>
-                    Unable to Load Menu
-                </h3>
-                <p style={{
-                    fontSize: '0.9375rem',
-                    color: 'var(--ds-text-secondary)',
-                    maxWidth: '280px',
-                    marginBottom: '24px'
-                }}>
-                    {error}
-                </p>
+                <h3 className="text-lg font-bold text-gray-800 mb-2">Unavailable</h3>
+                <p className="text-gray-500 mb-6 max-w-xs">{error}</p>
                 <button
                     onClick={() => window.location.reload()}
-                    style={{
-                        background: 'linear-gradient(135deg, var(--ds-maroon) 0%, var(--ds-maroon-dark) 100%)',
-                        color: 'white',
-                        fontWeight: 600,
-                        padding: '14px 32px',
-                        borderRadius: '12px',
-                        border: 'none',
-                        cursor: 'pointer',
-                        fontSize: '0.9375rem',
-                        boxShadow: '0 4px 16px var(--ds-shadow)'
-                    }}
+                    className="px-6 py-3 rounded-lg font-bold text-white bg-[#8A1538]"
                 >
-                    Try Again
+                    Retry
                 </button>
             </div>
         );
     }
 
-    // =========================================
-    // MAIN APP UI
-    // =========================================
     return (
-        <div className="app-container">
+        <div className="min-h-screen pb-28 font-sans" style={{ backgroundColor: theme.background }}>
 
-            {/* ============================================
-                FIXED HEADER - Deep Maroon/Wine Background
-                ============================================ */}
-            <header className="ds-header">
-                <div className="ds-header-content">
+            {/* 1. Header Section */}
+            <header
+                className={`sticky top-0 z-50 transition-all duration-200 border-b border-transparent ${scrolled ? 'bg-white shadow-sm border-gray-100' : 'bg-[#F9F9F9]'}`}
+            >
+                {/* Top Row: Restaurant Info & Table Badge */}
+                <div className="px-4 py-3 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        {/* Optional Back Button */}
+                        {/* <button className="p-1.5 -ml-2 rounded-full hover:bg-black/5">
+                            <ArrowLeft size={22} className="text-gray-700" />
+                        </button> */}
 
-                    {/* Top Row: Brand + Table Badge */}
-                    <div style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        padding: '0 20px',
-                        marginBottom: '16px'
-                    }}>
-                        {/* Left: DineStack Brand Logo */}
-                        <div>
-                            <h1 className="ds-brand">
-                                Dine<span className="ds-brand-accent">Stack</span>
-                            </h1>
-                        </div>
-
-                        {/* Right: Table Pill Badge */}
-                        <div className="ds-table-pill">
-                            <span className="ds-table-pill-dot" />
-                            <span className="ds-table-pill-text">
-                                Table {session?.table.number || '1'}
-                            </span>
+                        <div className="flex items-center gap-2.5">
+                            <div className="w-10 h-10 rounded-lg bg-white shadow-sm border border-gray-100 flex items-center justify-center text-[#8A1538]">
+                                <ChefHat size={20} fill="#8A1538" className="text-[#8A1538]" />
+                            </div>
+                            <div className="flex flex-col">
+                                <h1 className="text-lg font-bold text-[#333] leading-tight line-clamp-1">
+                                    {session?.restaurant.name || 'Restaurant'}
+                                </h1>
+                                <span className="text-xs text-gray-500">
+                                    Fine Dining • North Indian
+                                </span>
+                            </div>
                         </div>
                     </div>
 
-                    {/* Menu Title Row */}
-                    <div style={{
-                        padding: '0 20px',
-                        marginBottom: '14px'
-                    }}>
-                        <h2 className="ds-menu-title">Menu</h2>
+                    {/* Table Badge */}
+                    <div className="flex items-center gap-1 bg-[#E8F5E9] border border-[#C8E6C9] px-2.5 py-1 rounded-md">
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#2D9F5D] animate-pulse" />
+                        <span className="text-xs font-bold text-[#1B5E20] uppercase tracking-wide">
+                            Table {session?.table.number}
+                        </span>
                     </div>
+                </div>
 
-                    {/* Category Pills Navigation - Scrollable */}
-                    <nav className="ds-category-nav scrollbar-hide">
-                        <div
-                            ref={navRef}
-                            className="ds-category-nav-inner"
-                        >
-                            {menu.map((category) => {
-                                const isActive = activeCategory === category.id;
-                                return (
-                                    <button
-                                        key={category.id}
-                                        data-category={category.id}
-                                        onClick={() => scrollToCategory(category.id)}
-                                        className={`ds-category-pill ${isActive ? 'ds-category-pill--active' : 'ds-category-pill--inactive'}`}
-                                    >
-                                        {category.name}
-                                    </button>
-                                );
-                            })}
-                        </div>
-                    </nav>
+                {/* 2. Category Pills (Horizontal Scroll) */}
+                <div className="px-4 pb-3 pt-1 w-full overflow-x-hidden">
+                    <div
+                        ref={navRef}
+                        className="flex gap-2.5 overflow-x-auto scrollbar-hide pb-1"
+                    >
+                        {menu.map((category) => {
+                            const isActive = activeCategory === category.id;
+                            return (
+                                <button
+                                    key={category.id}
+                                    data-category={category.id}
+                                    onClick={() => scrollToCategory(category.id)}
+                                    className={`flex-none px-4 py-2 rounded-full text-sm font-semibold transition-all whitespace-nowrap border
+                                        ${isActive
+                                            ? 'bg-[#333] text-white border-[#333] shadow-md transform scale-[1.02]'
+                                            : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
+                                        }`}
+                                >
+                                    {category.name}
+                                </button>
+                            );
+                        })}
+                    </div>
                 </div>
             </header>
 
-            {/* ============================================
-                SCROLLABLE CONTENT AREA - Light Cream Background
-                ============================================ */}
-            <main className="ds-content">
-                <div className="ds-content-inner">
+            {/* 3. Menu Items List */}
+            <main className="px-4 py-2 space-y-6">
+                {menu.map((category) => (
+                    <section
+                        key={category.id}
+                        id={category.id}
+                        ref={(el) => { categoryRefs.current[category.id] = el }}
+                        className="scroll-mt-36"
+                    >
+                        <h2 className="text-lg font-bold text-[#333] mb-3 px-1">
+                            {category.name}
+                        </h2>
 
-                    {/* Restaurant Name Banner */}
-                    <div style={{
-                        marginBottom: '24px',
-                        paddingBottom: '20px',
-                        borderBottom: '1px solid var(--ds-border)'
-                    }}>
-                        <h3 style={{
-                            fontFamily: 'var(--font-body)',
-                            fontSize: '1.125rem',
-                            fontWeight: 700,
-                            color: 'var(--ds-text-primary)',
-                            marginBottom: '4px'
-                        }}>
-                            {session?.restaurant.name || 'Restaurant'}
-                        </h3>
-                        <p style={{
-                            fontSize: '0.8125rem',
-                            color: 'var(--ds-text-secondary)'
-                        }}>
-                            Welcome! Browse our menu and tap + to add items.
-                        </p>
-                    </div>
-
-                    {/* Menu Categories & Items */}
-                    {menu.map((category) => (
-                        <section
-                            key={category.id}
-                            ref={(el) => { categoryRefs.current[category.id] = el }}
-                            className="ds-category-section"
-                            style={{ scrollMarginTop: '180px' }}
-                        >
-                            <h2 className="ds-category-title">{category.name}</h2>
-
+                        <div className="space-y-4">
                             {category.items.map((item) => {
                                 const qty = getItemQuantity(item.id);
                                 return (
-                                    <div key={item.id} className="ds-menu-card">
-                                        <div style={{ display: 'flex', gap: '14px' }}>
-
-                                            {/* Item Image */}
-                                            <div className="ds-item-image">
+                                    <div
+                                        key={item.id}
+                                        className="bg-white rounded-xl p-3 shadow-sm border border-gray-100 w-full"
+                                    >
+                                        <div className="flex gap-3">
+                                            {/* Left: Image (Square 96x96) */}
+                                            <div className="relative w-24 h-24 rounded-lg overflow-hidden flex-shrink-0 border border-gray-100">
                                                 {item.image ? (
                                                     <Image
                                                         src={item.image}
                                                         alt={item.name}
                                                         fill
-                                                        sizes="88px"
-                                                        style={{ objectFit: 'cover' }}
+                                                        className="object-cover"
                                                     />
                                                 ) : (
                                                     <ImagePlaceholder />
                                                 )}
                                                 {!item.isAvailable && (
-                                                    <div style={{
-                                                        position: 'absolute',
-                                                        inset: 0,
-                                                        background: 'rgba(255,255,255,0.85)',
-                                                        backdropFilter: 'blur(2px)',
-                                                        display: 'flex',
-                                                        alignItems: 'center',
-                                                        justifyContent: 'center'
-                                                    }}>
-                                                        <span style={{
-                                                            fontSize: '0.625rem',
-                                                            fontWeight: 700,
-                                                            color: 'var(--ds-text-secondary)',
-                                                            background: 'var(--ds-cream-dark)',
-                                                            padding: '4px 8px',
-                                                            borderRadius: '4px'
-                                                        }}>
+                                                    <div className="absolute inset-0 bg-white/80 backdrop-blur-[1px] flex items-center justify-center p-1 text-center">
+                                                        <span className="text-[10px] font-bold text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded border border-gray-200">
                                                             SOLD OUT
                                                         </span>
                                                     </div>
                                                 )}
                                             </div>
 
-                                            {/* Item Details */}
-                                            <div style={{
-                                                flex: 1,
-                                                display: 'flex',
-                                                flexDirection: 'column',
-                                                justifyContent: 'space-between',
-                                                minWidth: 0
-                                            }}>
+                                            {/* Right: Details */}
+                                            <div className="flex-1 flex flex-col justify-between py-0.5 min-w-0">
                                                 <div>
-                                                    <h3 className="ds-item-name" style={{
-                                                        display: '-webkit-box',
-                                                        WebkitLineClamp: 2,
-                                                        WebkitBoxOrient: 'vertical',
-                                                        overflow: 'hidden'
-                                                    }}>
-                                                        {item.name}
-                                                    </h3>
-                                                    <p className="ds-item-desc" style={{
-                                                        display: '-webkit-box',
-                                                        WebkitLineClamp: 2,
-                                                        WebkitBoxOrient: 'vertical',
-                                                        overflow: 'hidden'
-                                                    }}>
+                                                    <div className="flex items-start justify-between gap-1">
+                                                        <h3 className="font-bold text-[16px] text-[#333] leading-snug line-clamp-2">
+                                                            {item.name}
+                                                        </h3>
+                                                    </div>
+                                                    <p className="text-[13px] text-gray-500 mt-1 line-clamp-2 leading-relaxed">
                                                         {item.description || "Freshly prepared with authentic ingredients."}
                                                     </p>
                                                 </div>
 
-                                                <div style={{
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    justifyContent: 'space-between',
-                                                    marginTop: '10px'
-                                                }}>
-                                                    <span className="ds-item-price">₹{item.price}</span>
+                                                <div className="flex items-center justify-between mt-2.5">
+                                                    <span className="font-bold text-[16px] text-[#333]">
+                                                        ₹{item.price}
+                                                    </span>
 
-                                                    {/* Add/Quantity Controls */}
-                                                    {qty === 0 ? (
-                                                        <button
-                                                            onClick={() => addToCart(item)}
-                                                            disabled={!item.isAvailable}
-                                                            className="ds-add-btn"
-                                                            style={{
-                                                                opacity: item.isAvailable ? 1 : 0.4,
-                                                                cursor: item.isAvailable ? 'pointer' : 'not-allowed'
-                                                            }}
-                                                        >
-                                                            <Plus size={18} strokeWidth={2.5} />
-                                                        </button>
-                                                    ) : (
-                                                        <div className="ds-qty-control">
-                                                            <button
-                                                                onClick={() => removeFromCart(item.id)}
-                                                                className="ds-qty-btn"
-                                                            >
-                                                                <Minus size={16} strokeWidth={2.5} />
-                                                            </button>
-                                                            <span className="ds-qty-value">{qty}</span>
+                                                    {/* Add Button Area */}
+                                                    <div className="relative z-10">
+                                                        {qty === 0 ? (
                                                             <button
                                                                 onClick={() => addToCart(item)}
-                                                                className="ds-qty-btn"
+                                                                disabled={!item.isAvailable}
+                                                                className="w-8 h-8 rounded-full flex items-center justify-center shadow-md active:scale-95 transition-all text-white disabled:opacity-50 disabled:grayscale"
+                                                                style={{ backgroundColor: theme.primary }}
                                                             >
-                                                                <Plus size={16} strokeWidth={2.5} />
+                                                                <Plus size={18} strokeWidth={3} />
                                                             </button>
-                                                        </div>
-                                                    )}
+                                                        ) : (
+                                                            <div className="flex items-center h-8 bg-white border border-gray-200 rounded-full shadow-sm overflow-hidden">
+                                                                <button
+                                                                    onClick={() => removeFromCart(item.id)}
+                                                                    className="w-8 h-full flex items-center justify-center text-[#8A1538] hover:bg-red-50 active:bg-red-100 transition-colors"
+                                                                >
+                                                                    <Minus size={16} strokeWidth={3} />
+                                                                </button>
+                                                                <span className="min-w-[20px] text-center font-bold text-sm text-[#333]">
+                                                                    {qty}
+                                                                </span>
+                                                                <button
+                                                                    onClick={() => addToCart(item)}
+                                                                    className="w-8 h-full flex items-center justify-center text-[#8A1538] hover:bg-red-50 active:bg-red-100 transition-colors"
+                                                                >
+                                                                    <Plus size={16} strokeWidth={3} />
+                                                                </button>
+                                                            </div>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
                                 );
                             })}
-                        </section>
-                    ))}
-
-                    {/* End of Menu Footer */}
-                    {menu.length > 0 && (
-                        <div style={{
-                            textAlign: 'center',
-                            padding: '32px 0'
-                        }}>
-                            <div style={{
-                                width: '48px',
-                                height: '1px',
-                                background: 'var(--ds-border)',
-                                margin: '0 auto 12px'
-                            }} />
-                            <p style={{
-                                fontSize: '0.75rem',
-                                color: 'var(--ds-text-light)',
-                                fontWeight: 500,
-                                letterSpacing: '0.05em',
-                                textTransform: 'uppercase'
-                            }}>
-                                End of Menu
-                            </p>
-                            <p style={{
-                                fontSize: '0.6875rem',
-                                color: 'var(--ds-text-light)',
-                                marginTop: '6px',
-                                opacity: 0.7
-                            }}>
-                                Powered by DineStack
-                            </p>
                         </div>
-                    )}
-                </div>
+                    </section>
+                ))}
+
+                {menu.length > 0 && (
+                    <div className="py-8 text-center">
+                        <div className="w-12 h-[1px] bg-gray-300 mx-auto mb-3" />
+                        <p className="text-xs text-gray-400 font-medium tracking-wide uppercase">
+                            End of Menu
+                        </p>
+                        <p className="text-[10px] text-gray-300 mt-1">
+                            Powered by DineStack
+                        </p>
+                    </div>
+                )}
             </main>
 
-            {/* ============================================
-                STICKY CART BAR - Bottom of Screen
-                ============================================ */}
+            {/* 4. Sticky Cart Bar */}
             {cartItemCount > 0 && (
-                <div className="ds-cart-bar animate-slide-up">
-                    <button
-                        onClick={handlePlaceOrder}
-                        disabled={placingOrder}
-                        className="ds-cart-btn"
-                    >
-                        {/* Left: Item count & Total */}
-                        <div className="ds-cart-info">
-                            <span className="ds-cart-count">
-                                {cartItemCount} {cartItemCount === 1 ? 'Item' : 'Items'}
-                            </span>
-                            <span className="ds-cart-total">
-                                ₹{cartTotal.toFixed(0)}
-                            </span>
-                        </div>
+                <div className="fixed bottom-0 left-0 right-0 z-50 p-4 bg-gradient-to-t from-white via-white to-transparent pb-6">
+                    <div className="max-w-md mx-auto">
+                        <button
+                            onClick={handlePlaceOrder}
+                            disabled={placingOrder}
+                            className="w-full relative overflow-hidden rounded-xl shadow-lg transition-transform active:scale-[0.98] flex items-center justify-between p-0 bg-[#8A1538]"
+                        >
+                            {/* Left: Item Count & Price */}
+                            <div className="flex flex-col justify-center px-5 py-3.5 bg-[#6D0F2E]/30 h-full border-r border-white/10">
+                                <span className="text-[11px] font-medium text-white/80 uppercase tracking-wider">
+                                    {cartItemCount} {cartItemCount === 1 ? 'ITEM' : 'ITEMS'}
+                                </span>
+                                <span className="text-lg font-bold text-white leading-none mt-0.5">
+                                    ₹{cartTotal.toFixed(0)}
+                                </span>
+                            </div>
 
-                        {/* Right: Action */}
-                        <div className="ds-cart-action">
-                            <span className="ds-cart-action-text">
-                                {placingOrder ? 'Placing Order...' : 'Place Order'}
-                            </span>
-                            {!placingOrder && <ArrowRight size={18} strokeWidth={2.5} color="white" />}
-                            {placingOrder && <Loader2 size={18} className="animate-spin" color="white" />}
-                        </div>
-                    </button>
+                            {/* Right: Action Text */}
+                            <div className="flex-1 flex items-center justify-center gap-2 pr-2">
+                                <span className="font-bold text-white text-[16px] tracking-wide">
+                                    {placingOrder ? 'Sending Order...' : 'Place Order'}
+                                </span>
+                                {!placingOrder && <ArrowRight size={18} className="text-white" strokeWidth={3} />}
+                                {placingOrder && <Loader2 size={18} className="text-white animate-spin" />}
+                            </div>
+                        </button>
+                    </div>
                 </div>
             )}
 
-            {/* ============================================
-                SUCCESS TOAST
-                ============================================ */}
+            {/* Order Success Toast */}
             {orderSuccess && (
-                <div style={{
-                    position: 'fixed',
-                    top: '24px',
-                    left: '50%',
-                    transform: 'translateX(-50%)',
-                    zIndex: 200,
-                    width: '90%',
-                    maxWidth: '360px'
-                }}
-                    className="animate-slide-down"
-                >
-                    <div className="ds-toast-success">
-                        <div style={{
-                            width: '36px',
-                            height: '36px',
-                            borderRadius: '50%',
-                            background: 'rgba(255,255,255,0.2)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            flexShrink: 0
-                        }}>
-                            <CheckCircle2 size={20} color="white" />
+                <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[60] w-[90%] max-w-sm animate-in slide-in-from-top-4 fade-in duration-300">
+                    <div className="bg-[#2D9F5D] text-white px-4 py-3 rounded-xl shadow-xl flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center shrink-0">
+                            <CheckCircle2 size={18} className="text-white" />
                         </div>
                         <div>
-                            <h4 style={{
-                                fontWeight: 700,
-                                fontSize: '0.9375rem',
-                                color: 'white',
-                                marginBottom: '2px'
-                            }}>
-                                Order Placed!
-                            </h4>
-                            <p style={{
-                                fontSize: '0.8125rem',
-                                color: 'rgba(255,255,255,0.9)'
-                            }}>
-                                Order #{orderSuccess} sent to kitchen.
-                            </p>
+                            <h4 className="font-bold text-sm">Order Sent Successfully!</h4>
+                            <p className="text-white/90 text-xs mt-0.5">Order #{orderSuccess} has been placed.</p>
                         </div>
                     </div>
                 </div>
@@ -590,9 +464,8 @@ function OrderContent() {
 export default function TableOrderPage() {
     return (
         <Suspense fallback={
-            <div className="ds-loading">
-                <div className="ds-loading-spinner" />
-                <p className="ds-loading-text">Loading...</p>
+            <div className="flex flex-col justify-center items-center min-h-screen bg-[#F9F9F9]">
+                <Loader2 className="animate-spin w-8 h-8 text-[#8A1538]" />
             </div>
         }>
             <OrderContent />
