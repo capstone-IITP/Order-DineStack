@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useMemo, Suspense } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import {
     Search,
     ShoppingBag,
@@ -59,6 +59,7 @@ const DotIndicator = ({ isVegetarian }: { isVegetarian?: boolean }) => (
 
 function OrderContent() {
     const params = useParams();
+    const router = useRouter();
     const tableId = params.tableId as string;
 
     // Backend state
@@ -179,9 +180,12 @@ function OrderContent() {
             setCart({});
             setOrderSuccess(result.orderNumber || 'placed');
 
-            setTimeout(() => {
-                setOrderSuccess(null);
-            }, 5000);
+            // Redirect to success page
+            const params = new URLSearchParams();
+            if (result.orderNumber) params.set('orderId', result.orderNumber);
+            if (result.order.estimatedTime) params.set('estimatedTime', result.order.estimatedTime);
+
+            router.push(`/order-success?${params.toString()}`);
 
         } catch (err: any) {
             console.error('Order placement error:', err);
@@ -248,7 +252,7 @@ function OrderContent() {
                             {session?.restaurant.name || 'Fine Dining'}
                         </h2>
                         <h1 className="text-3xl font-light tracking-tight" style={{ color: THEME.text }}>
-                            Gourmet<span className="font-bold">Menu</span><span style={{ color: THEME.primary }}>.</span>
+                            DineStack<span className="font-bold">Menu</span><span style={{ color: THEME.primary }}>.</span>
                         </h1>
                     </div>
                     <div className="flex items-center gap-2">
