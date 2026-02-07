@@ -20,15 +20,13 @@ const THEME = {
 function SuccessContent() {
     const searchParams = useSearchParams();
     const router = useRouter();
+
+    // Read params as per requirement
     const orderId = searchParams.get('orderId');
-    const estimatedTime = searchParams.get('estimatedTime') || '15-20 mins';
+    const eta = searchParams.get('eta');
 
-    // Prevent back navigation to order page with same state
+    // Prevent back navigation to order page
     useEffect(() => {
-        // Optional: Could clear cart state here if it was persisted
-        // Since cart is local state in previous page, it's already "cleared" by navigation
-
-        // Disable back button to prevent accidental re-submission logic
         window.history.pushState(null, '', window.location.href);
         const handlePopState = () => {
             window.history.pushState(null, '', window.location.href);
@@ -37,11 +35,16 @@ function SuccessContent() {
         return () => window.removeEventListener('popstate', handlePopState);
     }, []);
 
+    // Strict check: if orderId is missing, show error state
     if (!orderId) {
         return (
             <div className="flex flex-col items-center justify-center min-h-screen p-6 text-center" style={{ backgroundColor: THEME.bg }}>
-                <p className="text-gray-500">No order details found.</p>
-                <Link href="/" className="mt-4 text-blue-600 underline">Return Home</Link>
+                <div className="w-16 h-16 rounded-full bg-gray-200 flex items-center justify-center mb-4 text-gray-400">
+                    <ChefHat size={32} />
+                </div>
+                <h3 className="text-xl font-bold text-gray-800 mb-2">No order details found</h3>
+                <p className="text-gray-500 mb-6">We couldn't find the order information for this session.</p>
+                <Link href="/" className="px-6 py-3 rounded-xl bg-gray-900 text-white font-bold">Return Home</Link>
             </div>
         );
     }
@@ -61,19 +64,21 @@ function SuccessContent() {
                     <CheckCircle2 size={48} className="text-green-600 drop-shadow-sm" />
                 </div>
 
-                <h1 className="text-2xl font-bold mb-2">Order Received!</h1>
+                <h1 className="text-2xl font-bold mb-2">Order Placed Successfully!</h1>
                 <p className="text-sm text-gray-500 mb-8 leading-relaxed">
                     Your order <span className="font-mono font-bold text-gray-800">#{orderId}</span> has been sent to the kitchen.
                 </p>
 
-                {/* ETA Card */}
-                <div className="w-full bg-orange-50 rounded-2xl p-6 border border-orange-100 mb-8 flex flex-col items-center gap-2">
-                    <div className="flex items-center gap-2 text-orange-800 font-bold uppercase tracking-widest text-xs mb-1">
-                        <Clock size={14} /> Estimated Wait
+                {/* ETA Card - Only show if eta is available */}
+                {eta && (
+                    <div className="w-full bg-orange-50 rounded-2xl p-6 border border-orange-100 mb-8 flex flex-col items-center gap-2">
+                        <div className="flex items-center gap-2 text-orange-800 font-bold uppercase tracking-widest text-xs mb-1">
+                            <Clock size={14} /> Estimated Wait
+                        </div>
+                        <span className="text-3xl font-black text-orange-900">{eta}</span>
+                        <p className="text-xs text-orange-600/80">Chefs are working their magic!</p>
                     </div>
-                    <span className="text-3xl font-black text-orange-900">{estimatedTime}</span>
-                    <p className="text-xs text-orange-600/80">Chefs are working their magic!</p>
-                </div>
+                )}
 
                 {/* Info Text */}
                 <div className="flex items-start gap-3 p-4 bg-gray-50 rounded-xl text-left w-full mb-8">

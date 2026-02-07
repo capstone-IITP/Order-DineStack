@@ -180,6 +180,7 @@ export const placeOrder = async (
             success: response.data.success,
             order,
             orderNumber: order.orderNumber, // Expose at top level for convenience
+            estimatedTime: response.data.estimatedTime,
         };
     } catch (error) {
         console.error('Failed to place order:', error);
