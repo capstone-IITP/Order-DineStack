@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useMemo, useRef, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Html5Qrcode } from 'html5-qrcode';
-import { Utensils, Loader2, Check, CheckCircle2, Search, Filter, ChevronRight, Star, Leaf, Plus, Minus, X, ShoppingBag, ArrowLeft, Trash2, AlertCircle, Clock, ChefHat, Bell, WifiOff, Lock, RefreshCw, Send, ScanLine, Camera, Smartphone } from 'lucide-react';
+import { Utensils, Loader2, Check, CheckCircle2, Search, Filter, ChevronRight, Star, Leaf, Plus, Minus, X, ShoppingBag, ArrowLeft, Trash2, AlertCircle, Clock, ChefHat, Bell, WifiOff, Lock, RefreshCw, Send, ScanLine, Camera, Smartphone, User, Phone } from 'lucide-react';
 
 // --- Configuration ---
 const IS_RESTAURANT_OPEN = true; // Toggle this to test "Closed" state
@@ -446,6 +446,136 @@ const ConfirmationView = ({ session, onConfirm, onCancel }: { session: Session |
     </div>
   )
 }
+
+const CustomerIdentityView = ({ onComplete }: { onComplete: () => void }) => {
+  const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [errors, setErrors] = useState<{ name?: string; phone?: string }>({});
+  const [submitted, setSubmitted] = useState(false);
+
+  // Gate: if identity already exists in localStorage, skip immediately
+  useEffect(() => {
+    const savedName = localStorage.getItem('dinestack_customer_name');
+    const savedPhone = localStorage.getItem('dinestack_customer_phone');
+    if (savedName && savedPhone) {
+      onComplete();
+    }
+  }, [onComplete]);
+
+  const validate = () => {
+    const newErrors: { name?: string; phone?: string } = {};
+    if (!name.trim() || name.trim().length < 2) {
+      newErrors.name = 'Name must be at least 2 characters';
+    }
+    if (!phone.trim() || !/^\d{10}$/.test(phone.trim())) {
+      newErrors.phone = 'Please enter a valid 10-digit phone number';
+    }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitted(true);
+    if (!validate()) return;
+    localStorage.setItem('dinestack_customer_name', name.trim());
+    localStorage.setItem('dinestack_customer_phone', phone.trim());
+    onComplete();
+  };
+
+  // Re-validate on change after first submit attempt
+  useEffect(() => {
+    if (submitted) validate();
+  }, [name, phone]);
+
+  return (
+    <div className="flex-1 flex flex-col w-full max-w-md mx-auto h-full bg-[#f8f9fa] animate-fade-in font-sans">
+
+      {/* Premium Gradient Header */}
+      <div className="relative overflow-hidden rounded-b-[3rem] shadow-xl shadow-[#8D0B41]/10 z-10 bg-[#5A0528] shrink-0 h-48">
+        <div className="absolute inset-0 bg-gradient-to-br from-[#5A0528] to-[#2E0219]"></div>
+        <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+        <div className="absolute bottom-0 left-0 w-48 h-48 bg-[#8D0B41]/20 rounded-full blur-2xl translate-y-1/2 -translate-x-1/4"></div>
+
+        <div className="relative px-6 flex flex-col justify-center h-full text-center space-y-2">
+          <span className="inline-block mx-auto p-3 bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 shadow-lg mb-2">
+            <User className="w-8 h-8 text-white" />
+          </span>
+          <h2 className="text-3xl font-serif-custom font-bold text-white leading-tight">Almost There!</h2>
+          <p className="text-white/70 text-sm font-medium">Tell us a bit about yourself</p>
+        </div>
+      </div>
+
+      {/* Form Card */}
+      <div className="flex-1 overflow-y-auto p-6 -mt-6">
+        <form onSubmit={handleSubmit} className="bg-white rounded-[2rem] p-6 shadow-[0_4px_20px_rgba(0,0,0,0.05)] border border-gray-100 space-y-6 relative z-20 animate-slide-up">
+
+          {/* Name Field */}
+          <div className="space-y-2">
+            <label className="text-sm font-bold text-gray-700 ml-1 flex items-center gap-2">
+              <User className="w-4 h-4 text-[#8D0B41]" />
+              Your Name
+            </label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Enter your name"
+              className={`w-full px-5 py-4 bg-gray-50 rounded-2xl text-base font-medium text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 transition-all ${errors.name ? 'ring-2 ring-red-300 bg-red-50/30 focus:ring-red-400' : 'focus:ring-[#8D0B41]/20 focus:bg-white'
+                }`}
+            />
+            {errors.name && (
+              <p className="text-red-500 text-xs font-medium ml-1 flex items-center gap-1 animate-fade-in">
+                <AlertCircle className="w-3 h-3" />
+                {errors.name}
+              </p>
+            )}
+          </div>
+
+          {/* Phone Field */}
+          <div className="space-y-2">
+            <label className="text-sm font-bold text-gray-700 ml-1 flex items-center gap-2">
+              <Phone className="w-4 h-4 text-[#8D0B41]" />
+              Phone Number
+            </label>
+            <input
+              type="tel"
+              value={phone}
+              onChange={(e) => {
+                const val = e.target.value.replace(/\D/g, '').slice(0, 10);
+                setPhone(val);
+              }}
+              placeholder="10-digit phone number"
+              className={`w-full px-5 py-4 bg-gray-50 rounded-2xl text-base font-medium text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 transition-all ${errors.phone ? 'ring-2 ring-red-300 bg-red-50/30 focus:ring-red-400' : 'focus:ring-[#8D0B41]/20 focus:bg-white'
+                }`}
+            />
+            {errors.phone && (
+              <p className="text-red-500 text-xs font-medium ml-1 flex items-center gap-1 animate-fade-in">
+                <AlertCircle className="w-3 h-3" />
+                {errors.phone}
+              </p>
+            )}
+          </div>
+
+          {/* Submit Button */}
+          <button
+            type="submit"
+            className="w-full bg-gradient-to-r from-[#8D0B41] to-[#B01E58] text-white py-4 rounded-2xl font-bold text-lg shadow-xl shadow-[#8D0B41]/25 hover:shadow-2xl hover:shadow-[#8D0B41]/40 active:scale-[0.98] transition-all flex items-center justify-center space-x-2 group"
+          >
+            <span>Continue to Menu</span>
+            <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+          </button>
+
+          <p className="text-center text-xs text-gray-400 leading-relaxed">Your details help us personalize your experience.<br />We never share your information.</p>
+        </form>
+      </div>
+
+      <div className="p-4 text-center opacity-40">
+        <span className="text-[10px] tracking-widest uppercase text-gray-400">Powered by DineStack</span>
+      </div>
+    </div>
+  );
+};
 
 const MenuItemCard = ({ item, onClick }: { item: MenuItem; onClick: () => void }) => {
   return (
@@ -1345,7 +1475,7 @@ const MenuContent = ({ cartCount, onOpenCart, cartTotal, addToCart }: any) => {
 
 
 function AppContent() {
-  const [view, setView] = useState<'scan' | 'landing' | 'confirmation' | 'menu' | 'cart' | 'checkout' | 'success'>('scan');
+  const [view, setView] = useState<'scan' | 'landing' | 'confirmation' | 'identity' | 'menu' | 'cart' | 'checkout' | 'success'>('scan');
   const [session, setSession] = useState<Session | null>(null);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [activeOrder, setActiveOrder] = useState<ActiveOrder | null>(null);
@@ -1541,12 +1671,13 @@ function AppContent() {
         @keyframes scan-laser { 0% { top: 0%; opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { top: 100%; opacity: 0; } }
       `}</style>
 
-      {view !== 'menu' && view !== 'cart' && view !== 'checkout' && view !== 'success' && <div className="absolute inset-0 bg-premium-gradient z-0 transition-opacity duration-1000"></div>}
+      {view !== 'menu' && view !== 'cart' && view !== 'checkout' && view !== 'success' && view !== 'identity' && <div className="absolute inset-0 bg-premium-gradient z-0 transition-opacity duration-1000"></div>}
 
       <main className="relative z-10 w-full max-w-md mx-auto h-[100dvh] flex flex-col justify-between">
         {view === 'scan' && <ScanQRView onScanSuccess={handleScanSuccess} />}
         {view === 'landing' && <LandingView onComplete={() => setView('confirmation')} />}
-        {view === 'confirmation' && <ConfirmationView session={session} onConfirm={() => setView('menu')} onCancel={() => setView('scan')} />}
+        {view === 'confirmation' && <ConfirmationView session={session} onConfirm={() => setView('identity')} onCancel={() => setView('scan')} />}
+        {view === 'identity' && <CustomerIdentityView onComplete={() => setView('menu')} />}
         {view === 'menu' && <MenuContent cartCount={cartCount} cartTotal={cartTotal} onOpenCart={() => setView('cart')} addToCart={addToCart} />}
         {view === 'cart' && (
           <CartView cartItems={cartItems} onClose={() => setView('menu')} onUpdateQuantity={updateQuantity} onRemoveItem={removeItem} onCheckout={() => setView('checkout')} />
