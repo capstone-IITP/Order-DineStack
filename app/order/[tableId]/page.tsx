@@ -57,10 +57,114 @@ const DotIndicator = ({ isVegetarian }: { isVegetarian?: boolean }) => (
 
 // --- Main App Component ---
 
+// --- Identity Form Component ---
+const IdentityForm = ({ onComplete, theme }: { onComplete: (name: string, phone: string) => void, theme: any }) => {
+    const [name, setName] = useState('');
+    const [phone, setPhone] = useState('');
+    const [error, setError] = useState('');
+
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+
+        if (!name.trim() || name.trim().length < 2) {
+            setError('Please enter a valid name');
+            return;
+        }
+        if (!phone.trim() || !/^\d{10}$/.test(phone.trim())) {
+            setError('Please enter a valid 10-digit phone number');
+            return;
+        }
+
+        onComplete(name.trim(), phone.trim());
+    };
+
+    return (
+        <div className="min-h-screen flex flex-col items-center justify-center p-6 animate-in fade-in zoom-in duration-300"
+            style={{ backgroundColor: theme.bg, color: theme.text }}>
+            <div className="w-full max-w-sm space-y-8">
+                <div className="text-center space-y-2">
+                    <div className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 shadow-md"
+                        style={{ backgroundColor: theme.surface, color: theme.primary }}>
+                        <ChefHat size={40} />
+                    </div>
+                    <h1 className="text-3xl font-light tracking-tight">Welcome!</h1>
+                    <p className="text-sm" style={{ color: theme.textMuted }}>Please enter your details to view the menu</p>
+                </div>
+
+                <form onSubmit={handleSubmit} className="space-y-5">
+                    <div className="space-y-2">
+                        <label className="text-xs font-bold uppercase tracking-widest" style={{ color: theme.textMuted }}>Name</label>
+                        <input
+                            type="text"
+                            required
+                            placeholder="Your Name"
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
+                            className="w-full px-4 py-3.5 rounded-xl border focus:outline-none focus:ring-2 transition shadow-sm"
+                            style={{
+                                backgroundColor: theme.surface,
+                                borderColor: theme.border,
+                                color: theme.text,
+                                outlineColor: theme.secondary
+                            }}
+                        />
+                    </div>
+
+                    <div className="space-y-2">
+                        <label className="text-xs font-bold uppercase tracking-widest" style={{ color: theme.textMuted }}>Phone Number</label>
+                        <input
+                            type="tel"
+                            required
+                            placeholder="10-digit Mobile Number"
+                            value={phone}
+                            onChange={(e) => {
+                                const val = e.target.value.replace(/\D/g, '').slice(0, 10);
+                                setPhone(val);
+                            }}
+                            className="w-full px-4 py-3.5 rounded-xl border focus:outline-none focus:ring-2 transition shadow-sm"
+                            style={{
+                                backgroundColor: theme.surface,
+                                borderColor: theme.border,
+                                color: theme.text,
+                                outlineColor: theme.secondary
+                            }}
+                        />
+                    </div>
+
+                    {error && (
+                        <div className="flex items-center gap-2 bg-red-50 p-3 rounded-lg text-sm text-red-600">
+                            <AlertCircle size={16} />
+                            {error}
+                        </div>
+                    )}
+
+                    <button
+                        type="submit"
+                        className="w-full text-white font-bold py-4 rounded-xl shadow-lg transition transform active:scale-[0.98] uppercase tracking-widest text-sm"
+                        style={{ backgroundColor: theme.primary }}
+                    >
+                        Continue to Menu
+                    </button>
+                </form>
+
+                <p className="text-center text-xs" style={{ color: theme.textMuted }}>
+                    Your details are used only for order management.
+                </p>
+            </div>
+        </div>
+    );
+};
+
+// --- Main App Component ---
+
 function OrderContent() {
     const params = useParams();
     const router = useRouter();
     const tableId = params.tableId as string;
+
+    // Identity State
+    const [identity, setIdentity] = useState<{ name: string; phone: string } | null>(null);
+    const [showIdentityForm, setShowIdentityForm] = useState(true);
 
     // Backend state
     const [loading, setLoading] = useState(true);
@@ -109,6 +213,36 @@ function OrderContent() {
 
         loadData();
     }, [tableId]);
+
+    // Identity Logic
+    useEffect(() => {
+        // We only check identity AFTER the menu has loaded or concurrently, 
+        // but for UX, let's just check immediately on mount.
+        const name = localStorage.getItem('dinestack_customer_name');
+        const phone = localStorage.getItem('dinestack_customer_phone');
+        if (name && phone && /^\d{10}$/.test(phone)) {
+            setIdentity({ name, phone });
+            setShowIdentityForm(false);
+        } else {
+            setShowIdentityForm(true);
+        }
+    }, []);
+
+    const handleIdentitySubmit = (name: string, phone: string) => {
+        localStorage.setItem('dinestack_customer_name', name);
+        localStorage.setItem('dinestack_customer_phone', phone);
+        setIdentity({ name, phone });
+        setShowIdentityForm(false);
+    };
+
+    const handleIdentityReset = () => {
+        if (window.confirm("Are you sure you want to change your details?")) {
+            localStorage.removeItem('dinestack_customer_name');
+            localStorage.removeItem('dinestack_customer_phone');
+            setIdentity(null);
+            setShowIdentityForm(true);
+        }
+    };
 
     // --- Cart Logic ---
     const handleAddToCart = (id: string) => setCart(p => ({ ...p, [id]: (p[id] || 0) + 1 }));
@@ -238,6 +372,10 @@ function OrderContent() {
         );
     }
 
+    if (showIdentityForm) {
+        return <IdentityForm onComplete={handleIdentitySubmit} theme={THEME} />;
+    }
+
     // --- Render ---
 
     return (
@@ -258,6 +396,12 @@ function OrderContent() {
                         <h1 className="text-3xl font-light tracking-tight" style={{ color: THEME.text }}>
                             DineStack<span className="font-bold">Menu</span><span style={{ color: THEME.primary }}>.</span>
                         </h1>
+                        <div className="flex items-center gap-2 mt-1">
+                            <span className="text-xs font-medium" style={{ color: THEME.textMuted }}>Hi, {identity?.name}</span>
+                            <button onClick={handleIdentityReset} className="text-[10px] underline opacity-60 hover:opacity-100" style={{ color: THEME.primary }}>
+                                (Not you?)
+                            </button>
+                        </div>
                     </div>
                     <div className="flex items-center gap-2">
                         {/* Table Badge */}
