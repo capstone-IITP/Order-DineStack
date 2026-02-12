@@ -438,16 +438,57 @@ const ScanQRView = ({ onScanSuccess, onCancel }: { onScanSuccess: (rId: string, 
   );
 };
 
-const ConfirmationView = ({ session, onConfirm, onCancel }: { session: Session | null, onConfirm: () => void, onCancel: () => void }) => {
+const ConfirmationView = ({ session, onConfirm, onCancel, onResetIdentity }: { session: Session | null, onConfirm: () => void, onCancel: () => void, onResetIdentity: () => void }) => {
+  const [existingName, setExistingName] = useState<string | null>(null);
+
+  useEffect(() => {
+    const name = localStorage.getItem('dinestack_customer_name');
+    if (name) setExistingName(name);
+  }, []);
+
   return (
     <div className="flex-1 flex flex-col justify-center items-center w-full max-w-md mx-auto h-full p-4 sm:p-6 animate-fade-in">
       <div className="glass-panel w-full rounded-3xl p-8 flex flex-col items-center space-y-8 relative overflow-hidden">
         <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-[#8D0B41] to-[#B01E58]"></div>
-        <div className="text-center space-y-2"><h2 className="text-2xl font-serif-custom text-[#5A0528] italic">Welcome to Table {session?.tableId}</h2><p className="text-gray-600 text-sm">Please confirm your table number to proceed.</p></div>
-        <div className="relative"><div className="w-32 h-32 rounded-full border-4 border-[#8D0B41]/10 flex items-center justify-center bg-[#FDF2F6]"><span className="text-5xl font-serif-custom text-[#8D0B41] font-bold">{session?.tableId || '--'}</span></div><div className="absolute -bottom-2 -right-2 bg-green-500 text-white p-2 rounded-full shadow-lg"><Check className="w-5 h-5" /></div></div>
+
+        <div className="text-center space-y-2">
+          {existingName ? (
+            <>
+              <h2 className="text-2xl font-serif-custom text-[#5A0528] italic">Welcome back, {existingName}</h2>
+              <p className="text-gray-600 text-sm">Table {session?.tableId} is ready for you.</p>
+            </>
+          ) : (
+            <>
+              <h2 className="text-2xl font-serif-custom text-[#5A0528] italic">Welcome to Table {session?.tableId}</h2>
+              <p className="text-gray-600 text-sm">Please confirm your table number to proceed.</p>
+            </>
+          )}
+        </div>
+
+        <div className="relative">
+          <div className="w-32 h-32 rounded-full border-4 border-[#8D0B41]/10 flex items-center justify-center bg-[#FDF2F6]">
+            <span className="text-5xl font-serif-custom text-[#8D0B41] font-bold">{session?.tableId || '--'}</span>
+          </div>
+          <div className="absolute -bottom-2 -right-2 bg-green-500 text-white p-2 rounded-full shadow-lg">
+            <Check className="w-5 h-5" />
+          </div>
+        </div>
+
         <div className="flex flex-col w-full space-y-3 pt-4">
-          <button onClick={onConfirm} className="w-full bg-[#8D0B41] text-white py-4 rounded-xl font-medium shadow-lg shadow-[#8D0B41]/20 hover:bg-[#B01E58] active:scale-[0.98] transition-all">Confirm & View Menu</button>
-          <button onClick={onCancel} className="w-full bg-transparent text-[#8D0B41] py-3 rounded-xl border border-[#8D0B41]/20 font-medium hover:bg-[#8D0B41]/5 transition-colors">Not My Table</button>
+          <button onClick={onConfirm} className="w-full bg-[#8D0B41] text-white py-4 rounded-xl font-medium shadow-lg shadow-[#8D0B41]/20 hover:bg-[#B01E58] active:scale-[0.98] transition-all">
+            {existingName ? "Confirm & View Menu" : "Confirm Table"}
+          </button>
+
+          <div className="flex gap-2">
+            <button onClick={onCancel} className="flex-1 bg-transparent text-gray-500 py-3 rounded-xl border border-gray-200 font-medium hover:bg-gray-50 transition-colors text-xs">
+              Wrong Table?
+            </button>
+            {existingName && (
+              <button onClick={onResetIdentity} className="flex-1 bg-transparent text-[#8D0B41] py-3 rounded-xl border border-[#8D0B41]/20 font-medium hover:bg-[#8D0B41]/5 transition-colors text-xs">
+                Not {existingName}?
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>
@@ -1700,6 +1741,11 @@ function AppContent() {
               }
             }}
             onCancel={() => setView('scan')}
+            onResetIdentity={() => {
+              localStorage.removeItem('dinestack_customer_name');
+              localStorage.removeItem('dinestack_customer_phone');
+              setView('identity');
+            }}
           />
         )}
         {view === 'identity' && <CustomerIdentityView onComplete={() => setView('menu')} />}
