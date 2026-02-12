@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
-import { X, Clock, ShoppingBag, ChevronRight, CheckCircle2, AlertCircle, Utensils } from 'lucide-react';
+import { X, Clock, ShoppingBag, ChevronRight, CheckCircle2, AlertCircle, Utensils, FileText } from 'lucide-react';
 import { getCustomerOrders, CustomerOrder } from '@/lib/api';
 
 interface OrdersModalProps {
@@ -41,9 +41,29 @@ export default function OrdersModal({ isOpen, onClose, restaurantId, phone, them
     };
 
     useEffect(() => {
-        if (isOpen) {
+        let intervalId: NodeJS.Timeout;
+
+        if (isOpen && restaurantId && phone) {
+            // Initial fetch
             fetchOrders();
+
+            // Real-time polling (every 10 seconds)
+            intervalId = setInterval(() => {
+                // Silent fetch (don't set loading state to true for background updates)
+                if (restaurantId && phone) {
+                    getCustomerOrders(restaurantId, phone)
+                        .then(data => setOrders(data))
+                        .catch(err => {
+                            // Silent fail on background poll, unless 404 handling logic in api.ts is considered
+                            console.warn("Background poll failed", err);
+                        });
+                }
+            }, 10000);
         }
+
+        return () => {
+            if (intervalId) clearInterval(intervalId);
+        };
     }, [isOpen, restaurantId, phone]);
 
     if (!isOpen) return null;
@@ -122,14 +142,16 @@ export default function OrdersModal({ isOpen, onClose, restaurantId, phone, them
                     ) : filteredOrders.length === 0 ? (
                         <div className="flex flex-col items-center justify-center h-64 text-center opacity-60">
                             <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-                                <ShoppingBag size={24} className="text-gray-400" />
+                                <FileText size={24} className="text-gray-400" />
                             </div>
                             <h3 className="text-lg font-medium mb-1">No {activeTab} orders</h3>
-                            <p className="text-sm max-w-[200px]" style={{ color: theme.textMuted }}>
-                                {activeTab === 'current'
-                                    ? "You don't have any active orders at the moment."
-                                    : "You haven't placed any orders yet."}
-                            </p>
+                            <p className="text-sm text-gray-500 mb-4">You don't have any {activeTab} orders at the moment.</p>
+                            <button
+                                onClick={fetchOrders}
+                                className="text-xs font-bold px-4 py-2 rounded-full border border-gray-300 hover:bg-gray-50 transition-colors"
+                            >
+                                Refresh List
+                            </button>
                         </div>
                     ) : (
                         filteredOrders.map(order => {
