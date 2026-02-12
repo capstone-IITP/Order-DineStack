@@ -10,12 +10,95 @@ interface CartItem extends MenuItem {
     quantity: number;
 }
 
+const IdentityForm = ({ onComplete }: { onComplete: (name: string, phone: string) => void }) => {
+    const [name, setName] = useState('');
+    const [phone, setPhone] = useState('');
+    const [error, setError] = useState('');
+
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+
+        if (!name.trim() || name.trim().length < 2) {
+            setError('Please enter a valid name');
+            return;
+        }
+        if (!phone.trim() || !/^\d{10}$/.test(phone.trim())) {
+            setError('Please enter a valid 10-digit phone number');
+            return;
+        }
+
+        onComplete(name.trim(), phone.trim());
+    };
+
+    return (
+        <div className="min-h-screen bg-white flex flex-col items-center justify-center p-6 animate-in fade-in zoom-in duration-300">
+            <div className="w-full max-w-sm space-y-8">
+                <div className="text-center space-y-2">
+                    <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4 text-orange-600">
+                        <ChefHat size={32} />
+                    </div>
+                    <h1 className="text-2xl font-bold text-gray-900">Welcome!</h1>
+                    <p className="text-gray-500 text-sm">Please enter your details to view the menu</p>
+                </div>
+
+                <form onSubmit={handleSubmit} className="space-y-4">
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-700">Name</label>
+                        <input
+                            type="text"
+                            required
+                            placeholder="Your Name"
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
+                            className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition shadow-sm"
+                        />
+                    </div>
+
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-700">Phone Number</label>
+                        <input
+                            type="tel"
+                            required
+                            placeholder="10-digit Mobile Number"
+                            value={phone}
+                            onChange={(e) => {
+                                const val = e.target.value.replace(/\D/g, '').slice(0, 10);
+                                setPhone(val);
+                            }}
+                            className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition shadow-sm"
+                        />
+                    </div>
+
+                    {error && (
+                        <div className="flex items-center gap-2 text-red-600 bg-red-50 p-3 rounded-lg text-sm">
+                            <AlertCircle size={16} />
+                            {error}
+                        </div>
+                    )}
+
+                    <button
+                        type="submit"
+                        className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-orange-600/20 transition transform active:scale-[0.98]"
+                    >
+                        Continue to Menu
+                    </button>
+                </form>
+
+                <p className="text-center text-xs text-gray-400">
+                    Your details are used only for order management.
+                </p>
+            </div>
+        </div>
+    );
+};
+
 function OrderContent() {
     const searchParams = useSearchParams();
     const router = useRouter();
-
     // State
     const [loading, setLoading] = useState(true);
+    const [identity, setIdentity] = useState<{ name: string; phone: string } | null>(null);
+    const [showIdentityForm, setShowIdentityForm] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [session, setSession] = useState<SessionData | null>(null);
     const [menu, setMenu] = useState<Category[]>([]);
@@ -64,7 +147,36 @@ function OrderContent() {
         };
 
         loadData();
+        loadData();
     }, [restaurantId, tableId]);
+
+    // Identity Logic
+    useEffect(() => {
+        const name = localStorage.getItem('dinestack_customer_name');
+        const phone = localStorage.getItem('dinestack_customer_phone');
+        if (name && phone && /^\d{10}$/.test(phone)) {
+            setIdentity({ name, phone });
+            setShowIdentityForm(false);
+        } else {
+            setShowIdentityForm(true);
+        }
+    }, []);
+
+    const handleIdentitySubmit = (name: string, phone: string) => {
+        localStorage.setItem('dinestack_customer_name', name);
+        localStorage.setItem('dinestack_customer_phone', phone);
+        setIdentity({ name, phone });
+        setShowIdentityForm(false);
+    };
+
+    const handleIdentityReset = () => {
+        if (window.confirm("Are you sure you want to change your details?")) {
+            localStorage.removeItem('dinestack_customer_name');
+            localStorage.removeItem('dinestack_customer_phone');
+            setIdentity(null);
+            setShowIdentityForm(true);
+        }
+    };
 
     // Handlers
     const addToCart = (item: MenuItem) => {
@@ -134,6 +246,10 @@ function OrderContent() {
         );
     }
 
+    if (showIdentityForm) {
+        return <IdentityForm onComplete={handleIdentitySubmit} />;
+    }
+
     if (error) {
         return (
             <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 p-4 text-center">
@@ -162,9 +278,14 @@ function OrderContent() {
                         <h1 className="font-bold text-gray-900 leading-tight">
                             {session?.restaurant.name || 'Restaurant'}
                         </h1>
-                        <p className="text-xs text-gray-500">
-                            Table {session?.table.number || '?'}
-                        </p>
+                        <div className="flex items-center gap-2 text-xs text-gray-500">
+                            <span>Table {session?.table.number || '?'}</span>
+                            <span className="w-1 h-1 bg-gray-300 rounded-full"></span>
+                            <span>{identity?.name}</span>
+                            <button onClick={handleIdentityReset} className="text-orange-600 font-medium hover:underline ml-1">
+                                (Not you?)
+                            </button>
+                        </div>
                     </div>
                 </div>
             </header>
