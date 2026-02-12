@@ -281,7 +281,13 @@ export const getCustomerOrders = async (restaurantId: string, phone: string): Pr
         });
         console.log('[API] Orders fetched:', response.data);
         return response.data.orders || [];
-    } catch (error) {
+    } catch (error: any) {
+        // If the endpoint is missing (404), treat it as "No orders found" to avoid UI errors
+        if (error.response?.status === 404) {
+            console.warn('[API] /customer/orders endpoint not found (404). Treating as empty list.');
+            return [];
+        }
+
         console.error('Failed to fetch orders:', error);
         throw error;
     }
