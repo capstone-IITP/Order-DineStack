@@ -279,9 +279,9 @@ export const getCustomerOrders = async (restaurantId: string, phone: string): Pr
         const cleaned = phone.replace(/\D/g, '');
         const normalizedPhone = cleaned.length === 10 ? `+91${cleaned}` : (cleaned.length === 12 && cleaned.startsWith('91') ? `+${cleaned}` : phone);
 
-        console.log(`[API] Fetching orders for Restaurant: ${restaurantId}, Phone: ${normalizedPhone} (Original: ${phone})`);
+        console.log(`[API] Fetching orders for Entity: ${restaurantId}, Phone: ${normalizedPhone} (Original: ${phone})`);
         const response = await api.get(`/customer/orders`, {
-            params: { restaurantId, phone: normalizedPhone }
+            params: { entityId: restaurantId, phone: normalizedPhone }
         });
         console.log('[API] Orders fetched:', response.data);
         return response.data.orders || [];
