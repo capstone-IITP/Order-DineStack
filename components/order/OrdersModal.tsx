@@ -23,14 +23,25 @@ export default function OrdersModal({ isOpen, onClose, restaurantId, phone, them
     const [activeTab, setActiveTab] = useState<'current' | 'past'>('current');
     const [orders, setOrders] = useState<CustomerOrder[]>([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
-    useEffect(() => {
-        if (isOpen && restaurantId && phone) {
+    const fetchOrders = () => {
+        if (restaurantId && phone) {
             setLoading(true);
+            setError(null);
             getCustomerOrders(restaurantId, phone)
                 .then(data => setOrders(data))
-                .catch(err => console.error("Failed to load orders", err))
+                .catch(err => {
+                    console.error("Failed to load orders", err);
+                    setError("Failed to load your orders. Please try again.");
+                })
                 .finally(() => setLoading(false));
+        }
+    };
+
+    useEffect(() => {
+        if (isOpen) {
+            fetchOrders();
         }
     }, [isOpen, restaurantId, phone]);
 
@@ -91,6 +102,21 @@ export default function OrdersModal({ isOpen, onClose, restaurantId, phone, them
                         <div className="flex flex-col items-center justify-center h-40 space-y-3">
                             <div className="w-8 h-8 border-4 border-t-transparent rounded-full animate-spin" style={{ borderColor: theme.primary, borderTopColor: 'transparent' }} />
                             <p className="text-sm font-medium opacity-60">Fetching your orders...</p>
+                        </div>
+                    ) : error ? (
+                        <div className="flex flex-col items-center justify-center h-64 text-center">
+                            <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mb-4 text-red-500">
+                                <AlertCircle size={24} />
+                            </div>
+                            <h3 className="text-lg font-medium mb-1 text-red-600">Unable to load orders</h3>
+                            <p className="text-sm text-gray-500 mb-4">{error}</p>
+                            <button
+                                onClick={fetchOrders}
+                                className="px-6 py-2 rounded-lg text-white font-bold text-sm shadow-md transition-transform active:scale-95"
+                                style={{ backgroundColor: theme.primary }}
+                            >
+                                Try Again
+                            </button>
                         </div>
                     ) : filteredOrders.length === 0 ? (
                         <div className="flex flex-col items-center justify-center h-64 text-center opacity-60">

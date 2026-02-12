@@ -275,9 +275,11 @@ export interface CustomerOrder {
 
 export const getCustomerOrders = async (restaurantId: string, phone: string): Promise<CustomerOrder[]> => {
     try {
+        console.log(`[API] Fetching orders for Restaurant: ${restaurantId}, Phone: ${phone}`);
         const response = await api.get(`/customer/orders`, {
             params: { restaurantId, phone }
         });
+        console.log('[API] Orders fetched:', response.data);
         return response.data.orders || [];
     } catch (error) {
         console.error('Failed to fetch orders:', error);

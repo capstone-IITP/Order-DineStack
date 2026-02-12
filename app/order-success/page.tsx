@@ -4,7 +4,7 @@ import React, { Suspense, useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { CheckCircle2, Clock, ChefHat, ArrowRight, Utensils } from 'lucide-react';
 import Link from 'next/link';
-import { getOrderStatus } from '@/lib/api';
+import { getOrderStatus, getCurrentTableId } from '@/lib/api';
 
 // --- Configuration ---
 const THEME = {
@@ -153,6 +153,25 @@ function SuccessContent() {
                         </div>
                     )}
                 </div>
+
+                {/* Back to Menu Button */}
+                <Link href={`/order/${searchParams.get('orderId') ? getCurrentTableId() || '' : ''}`}
+                    className="mt-4 w-full py-3 rounded-xl border-2 border-dashed font-bold flex items-center justify-center gap-2 transition-all hover:bg-gray-50 active:scale-95"
+                    style={{ borderColor: THEME.border, color: THEME.textMuted }}
+                    onClick={(e) => {
+                        const tableId = localStorage.getItem('sessionData') ? JSON.parse(localStorage.getItem('sessionData')!).table.id : '';
+                        if (tableId) {
+                            e.preventDefault();
+                            router.push(`/order/${tableId}`);
+                        } else {
+                            // Fallback if no session
+                            router.push('/');
+                        }
+                    }}
+                >
+                    <ArrowRight size={18} className="rotate-180" />
+                    Order More Items
+                </Link>
 
                 <p className="mt-6 text-[10px] text-gray-400 uppercase tracking-widest font-medium">
                     Status updates automatically
