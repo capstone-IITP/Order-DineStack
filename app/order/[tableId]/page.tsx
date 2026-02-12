@@ -235,14 +235,7 @@ function OrderContent() {
         setShowIdentityForm(false);
     };
 
-    const handleIdentityReset = () => {
-        if (window.confirm("Are you sure you want to change your details?")) {
-            localStorage.removeItem('dinestack_customer_name');
-            localStorage.removeItem('dinestack_customer_phone');
-            setIdentity(null);
-            setShowIdentityForm(true);
-        }
-    };
+
 
     // --- Cart Logic ---
     const handleAddToCart = (id: string) => setCart(p => ({ ...p, [id]: (p[id] || 0) + 1 }));
@@ -398,9 +391,7 @@ function OrderContent() {
                         </h1>
                         <div className="flex items-center gap-2 mt-1">
                             <span className="text-xs font-medium" style={{ color: THEME.textMuted }}>Hi, {identity?.name}</span>
-                            <button onClick={handleIdentityReset} className="text-[10px] underline opacity-60 hover:opacity-100" style={{ color: THEME.primary }}>
-                                (Not you?)
-                            </button>
+
                         </div>
                     </div>
                     <div className="flex items-center gap-2">
