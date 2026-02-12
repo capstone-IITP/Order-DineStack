@@ -20,9 +20,11 @@ import {
     CheckCircle2,
     Loader2,
     Wallet,
-    Banknote
+    Banknote,
+    ClipboardList
 } from 'lucide-react';
 import { getTableInfo, placeOrder, SessionData, Category, MenuItem } from '@/lib/api';
+import OrdersModal from '@/components/order/OrdersModal';
 
 // --- Configuration & Data ---
 
@@ -182,6 +184,7 @@ function OrderContent() {
     const [isCartOpen, setIsCartOpen] = useState(false);
     const [filters, setFilters] = useState({ vegOnly: false, nonVeg: false });
     const [paymentMethod, setPaymentMethod] = useState<'online' | 'cash'>('cash');
+    const [isOrdersOpen, setIsOrdersOpen] = useState(false);
 
     // Load data from backend
     useEffect(() => {
@@ -391,10 +394,19 @@ function OrderContent() {
                         </h1>
                         <div className="flex items-center gap-2 mt-1">
                             <span className="text-xs font-medium" style={{ color: THEME.textMuted }}>Hi, {identity?.name}</span>
-
                         </div>
                     </div>
                     <div className="flex items-center gap-2">
+                        {/* Orders Button */}
+                        <button
+                            onClick={() => setIsOrdersOpen(true)}
+                            className="p-2.5 rounded-xl bg-white border shadow-sm active:scale-95 transition-all relative"
+                            style={{ borderColor: THEME.border }}
+                        >
+                            <ClipboardList size={20} style={{ color: THEME.primary }} />
+                            {/* Optional: Add a red dot if there are active orders (requires checking orders first, skipping for now) */}
+                        </button>
+
                         {/* Table Badge */}
                         <div className="flex items-center gap-1 bg-green-50 border border-green-200 px-2.5 py-1.5 rounded-lg">
                             <span className="w-1.5 h-1.5 rounded-full bg-green-600 animate-pulse" />
@@ -697,7 +709,15 @@ function OrderContent() {
                 </div>
             )}
 
-            {/* Global CSS */}
+            {/* Orders Modal */}
+            <OrdersModal
+                isOpen={isOrdersOpen}
+                onClose={() => setIsOrdersOpen(false)}
+                restaurantId={session?.restaurant.id || ''}
+                phone={identity?.phone || ''}
+                theme={THEME}
+            />
+
             <style>{`
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
