@@ -275,54 +275,13 @@ export interface CustomerOrder {
 
 export const getCustomerOrders = async (restaurantId: string, phone: string): Promise<CustomerOrder[]> => {
     try {
-        // Attempt to fetch from real API
         const response = await api.get(`/customer/orders`, {
             params: { restaurantId, phone }
         });
         return response.data.orders || [];
     } catch (error) {
-        console.warn('Failed to fetch orders, falling back to mock data:', error);
-
-        // Mock Data Fallback for Development/Demo
-        // Simulate a delay
-        await new Promise(resolve => setTimeout(resolve, 800));
-
-        return [
-            {
-                id: 'ord_123',
-                orderNumber: '101',
-                status: 'PREPARING',
-                totalAmount: 450,
-                createdAt: new Date(Date.now() - 1000 * 60 * 15).toISOString(), // 15 mins ago
-                items: [
-                    { id: 'item_1', name: 'Paneer Tikka', quantity: 1, price: 250 },
-                    { id: 'item_2', name: 'Butter Naan', quantity: 2, price: 100 }
-                ]
-            },
-            {
-                id: 'ord_124',
-                orderNumber: '98',
-                status: 'SERVED',
-                totalAmount: 120,
-                createdAt: new Date(Date.now() - 1000 * 60 * 45).toISOString(), // 45 mins ago
-                items: [
-                    { id: 'item_3', name: 'Cola', quantity: 2, price: 60 }
-                ]
-            },
-            {
-                id: 'ord_125',
-                orderNumber: '85',
-                status: 'COMPLETED',
-                totalAmount: 850,
-                createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(), // 1 day ago
-                items: [
-                    { id: 'item_4', name: 'Dal Makhani', quantity: 1, price: 300 },
-                    { id: 'item_5', name: 'Jeera Rice', quantity: 2, price: 200 },
-                    { id: 'item_6', name: 'Roti', quantity: 4, price: 100 },
-                    { id: 'item_7', name: 'Salad', quantity: 1, price: 150 }
-                ]
-            }
-        ];
+        console.error('Failed to fetch orders:', error);
+        throw error;
     }
 };
 
