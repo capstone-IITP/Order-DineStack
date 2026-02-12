@@ -33,7 +33,8 @@ export default function OrdersModal({ isOpen, onClose, restaurantId, phone, them
                 .then(data => setOrders(data))
                 .catch(err => {
                     console.error("Failed to load orders", err);
-                    setError("Failed to load your orders. Please try again.");
+                    const msg = err.response?.data?.error || err.message || "Failed to load your orders. Please try again.";
+                    setError(msg);
                 })
                 .finally(() => setLoading(false));
         }
