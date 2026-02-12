@@ -70,8 +70,9 @@ export default function OrdersModal({ isOpen, onClose, restaurantId, phone, them
 
     // Filter orders based on tab
     const filteredOrders = orders.filter(order => {
-        const isCurrent = ['PENDING', 'PREPARING', 'SERVED'].includes(order.status);
-        return activeTab === 'current' ? isCurrent : !isCurrent;
+        // Fix: SERVED is considered a Past Order. PENDING/PREPARING are Current.
+        const isPast = ['SERVED', 'COMPLETED', 'CANCELLED'].includes(order.status);
+        return activeTab === 'past' ? isPast : !isPast;
     }).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
     return (
