@@ -574,7 +574,7 @@ function OrderContent() {
             )}
 
             {/* Cart Modal (Sheet) */}
-            {isCartOpen && (
+            {isCartOpen && !placingOrder && (
                 <div className="absolute inset-0 z-50 flex flex-col justify-end bg-black/60 backdrop-blur-sm animate-fade-in">
                     <div className="absolute inset-0" onClick={() => setIsCartOpen(false)} />
 
@@ -653,23 +653,26 @@ function OrderContent() {
                             </div>
                             <button
                                 onClick={handlePlaceOrder}
-                                disabled={placingOrder}
-                                className="w-full text-white h-16 rounded-2xl font-bold text-lg uppercase tracking-widest shadow-lg active:scale-[0.98] transition-all flex items-center justify-center gap-2 group disabled:opacity-70"
+                                className="w-full text-white h-16 rounded-2xl font-bold text-lg uppercase tracking-widest shadow-lg active:scale-[0.98] transition-all flex items-center justify-center gap-2 group"
                                 style={{ backgroundColor: THEME.primary }}
                             >
-                                {placingOrder ? (
-                                    <>
-                                        <Loader2 className="animate-spin" size={20} />
-                                        Placing Order...
-                                    </>
-                                ) : (
-                                    <>
-                                        Confirm Order <ChevronRight className="group-hover:translate-x-1 transition-transform" />
-                                    </>
-                                )}
+                                Confirm Order <ChevronRight className="group-hover:translate-x-1 transition-transform" />
                             </button>
                         </div>
                     </div>
+                </div>
+            )}
+
+            {/* FULL SCREEN LOADING OVERLAY */}
+            {placingOrder && (
+                <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-white/90 backdrop-blur-md animate-in fade-in duration-300">
+                    <div className="relative">
+                        <div className="w-20 h-20 border-4 border-gray-100 rounded-full" />
+                        <div className="absolute top-0 left-0 w-20 h-20 border-4 border-t-transparent rounded-full animate-spin" style={{ borderColor: THEME.primary, borderTopColor: 'transparent' }} />
+                        <ChefHat size={32} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" style={{ color: THEME.primary }} />
+                    </div>
+                    <h2 className="mt-6 text-xl font-bold" style={{ color: THEME.text }}>Sending to Kitchen...</h2>
+                    <p className="mt-2 text-sm max-w-xs text-center" style={{ color: THEME.textMuted }}>Please wait while we confirm your order with the restaurant.</p>
                 </div>
             )}
 
