@@ -198,6 +198,13 @@ const validateSession = async (restaurantId: string, tableId: string): Promise<b
   });
 };
 
+const isValidIdentity = () => {
+  if (typeof window === 'undefined') return false;
+  const name = localStorage.getItem('dinestack_customer_name');
+  const phone = localStorage.getItem('dinestack_customer_phone');
+  return !!(name && name.trim().length >= 2 && phone && /^\d{10}$/.test(phone.trim()));
+};
+
 // --- Components ---
 
 const ClosedView = () => (
@@ -455,9 +462,7 @@ const CustomerIdentityView = ({ onComplete }: { onComplete: () => void }) => {
 
   // Gate: if identity already exists in localStorage, skip immediately
   useEffect(() => {
-    const savedName = localStorage.getItem('dinestack_customer_name');
-    const savedPhone = localStorage.getItem('dinestack_customer_phone');
-    if (savedName && savedPhone) {
+    if (isValidIdentity()) {
       onComplete();
     }
   }, [onComplete]);
@@ -1484,6 +1489,14 @@ function AppContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
+  // Route Guarding
+  useEffect(() => {
+    const protectedViews = ['menu', 'cart', 'checkout', 'success'];
+    if (protectedViews.includes(view) && !isValidIdentity()) {
+      setView('identity');
+    }
+  }, [view]);
+
   // Initial Session Handling & URL Parsing
   useEffect(() => {
     // Check for session initialization via URL
@@ -1507,7 +1520,7 @@ function AppContent() {
       // If we want to restore previous session from localStorage, we could do it here.
       // BUT REQUIREMENT SAYS: "If user refreshes... session must not persist."
       // So we do NOT restore session from localStorage.
-      setView('scan');
+      if (!session && view !== 'scan') setView('scan');
     }
   }, [searchParams, router]);
 
@@ -1676,7 +1689,19 @@ function AppContent() {
       <main className="relative z-10 w-full max-w-md mx-auto h-[100dvh] flex flex-col justify-between">
         {view === 'scan' && <ScanQRView onScanSuccess={handleScanSuccess} />}
         {view === 'landing' && <LandingView onComplete={() => setView('confirmation')} />}
-        {view === 'confirmation' && <ConfirmationView session={session} onConfirm={() => setView('identity')} onCancel={() => setView('scan')} />}
+        {view === 'confirmation' && (
+          <ConfirmationView
+            session={session}
+            onConfirm={() => {
+              if (isValidIdentity()) {
+                setView('menu');
+              } else {
+                setView('identity');
+              }
+            }}
+            onCancel={() => setView('scan')}
+          />
+        )}
         {view === 'identity' && <CustomerIdentityView onComplete={() => setView('menu')} />}
         {view === 'menu' && <MenuContent cartCount={cartCount} cartTotal={cartTotal} onOpenCart={() => setView('cart')} addToCart={addToCart} />}
         {view === 'cart' && (
