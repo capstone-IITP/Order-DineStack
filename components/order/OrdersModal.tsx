@@ -1,13 +1,15 @@
 
 import React, { useEffect, useState } from 'react';
 import { X, Clock, ShoppingBag, ChevronRight, CheckCircle2, AlertCircle, Utensils, FileText } from 'lucide-react';
-import { getCustomerOrders, CustomerOrder } from '@/lib/api';
+import { getCustomerOrders, getPastOrders, CustomerOrder } from '@/lib/api';
 
 interface OrdersModalProps {
     isOpen: boolean;
     onClose: () => void;
     restaurantId: string;
-    phone: string;
+    phone?: string;
+    deviceToken?: string;
+    initialTab?: 'current' | 'past';
     theme: any;
 }
 
@@ -19,44 +21,68 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }
     'CANCELLED': { label: 'Cancelled', color: '#991B1B', bg: '#FEF2F2' },
 };
 
-export default function OrdersModal({ isOpen, onClose, restaurantId, phone, theme }: OrdersModalProps) {
+export default function OrdersModal({ isOpen, onClose, restaurantId, phone, deviceToken, initialTab = 'current', theme }: OrdersModalProps) {
     const [activeTab, setActiveTab] = useState<'current' | 'past'>('current');
+
+    // Reset tab when modal opens
+    useEffect(() => {
+        if (isOpen) {
+            setActiveTab(initialTab);
+        }
+    }, [isOpen, initialTab]);
     const [orders, setOrders] = useState<CustomerOrder[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    const fetchOrders = () => {
-        if (restaurantId && phone) {
-            setLoading(true);
-            setError(null);
-            getCustomerOrders(restaurantId, phone)
-                .then(data => setOrders(data))
-                .catch(err => {
-                    console.error("Failed to load orders", err);
-                    const msg = err.response?.data?.error || err.message || "Failed to load your orders. Please try again.";
-                    setError(msg);
-                })
-                .finally(() => setLoading(false));
+    const fetchOrders = async () => {
+        if (!restaurantId) return;
+        if (!phone && !deviceToken) return;
+
+        setLoading(true);
+        setError(null);
+
+        try {
+            const promises = [];
+            if (phone) promises.push(getCustomerOrders(restaurantId, phone));
+            if (deviceToken) promises.push(getPastOrders(deviceToken));
+
+            const results = await Promise.all(promises);
+            // Merge and deduplicate by ID
+            const allOrders = results.flat();
+            const uniqueOrders = Array.from(new Map(allOrders.map(o => [o.id, o])).values());
+
+            setOrders(uniqueOrders);
+        } catch (err: any) {
+            console.error("Failed to load orders", err);
+            const msg = err.response?.data?.error || err.message || "Failed to load your orders.";
+            setError(msg);
+        } finally {
+            setLoading(false);
         }
     };
 
     useEffect(() => {
         let intervalId: NodeJS.Timeout;
 
-        if (isOpen && restaurantId && phone) {
+        if (isOpen && (phone || deviceToken)) {
             // Initial fetch
             fetchOrders();
 
             // Real-time polling (every 10 seconds)
-            intervalId = setInterval(() => {
-                // Silent fetch (don't set loading state to true for background updates)
-                if (restaurantId && phone) {
-                    getCustomerOrders(restaurantId, phone)
-                        .then(data => setOrders(data))
-                        .catch(err => {
-                            // Silent fail on background poll, unless 404 handling logic in api.ts is considered
-                            console.warn("Background poll failed", err);
-                        });
+            intervalId = setInterval(async () => {
+                if (!restaurantId) return;
+
+                try {
+                    const promises = [];
+                    if (phone) promises.push(getCustomerOrders(restaurantId, phone));
+                    if (deviceToken) promises.push(getPastOrders(deviceToken));
+
+                    const results = await Promise.all(promises);
+                    const allOrders = results.flat();
+                    const uniqueOrders = Array.from(new Map(allOrders.map(o => [o.id, o])).values());
+                    setOrders(uniqueOrders);
+                } catch (err) {
+                    console.warn("Background poll failed", err);
                 }
             }, 10000);
         }

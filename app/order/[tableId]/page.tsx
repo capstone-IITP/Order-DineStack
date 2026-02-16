@@ -192,6 +192,7 @@ function OrderContent() {
     const [filters, setFilters] = useState({ vegOnly: false, nonVeg: false });
     const [paymentMethod, setPaymentMethod] = useState<'online' | 'cash'>('cash');
     const [isOrdersOpen, setIsOrdersOpen] = useState(false);
+    const [ordersModalTab, setOrdersModalTab] = useState<'current' | 'past'>('current');
 
     // Load data from backend
     useEffect(() => {
@@ -592,7 +593,10 @@ function OrderContent() {
                             <span className="text-xs text-orange-600 mt-1">You have ordered here before.</span>
                         </div>
                         <button
-                            onClick={() => setShowPastOrders(true)}
+                            onClick={() => {
+                                setOrdersModalTab('past');
+                                setIsOrdersOpen(true);
+                            }}
                             className="px-4 py-2 bg-white text-orange-700 text-sm font-bold rounded-lg shadow-sm border border-orange-200 hover:bg-orange-50 active:scale-95 transition-all flex items-center gap-2"
                         >
                             <History size={16} />
@@ -602,64 +606,7 @@ function OrderContent() {
                 )}
             </main>
 
-            {/* Past Orders Modal */}
-            {
-                showPastOrders && (
-                    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm animate-fade-in p-4">
-                        <div className="absolute inset-0" onClick={() => setShowPastOrders(false)} />
-                        <div className="relative w-full max-w-lg bg-white rounded-2xl shadow-2xl max-h-[80vh] flex flex-col overflow-hidden animate-slide-up">
-                            <div className="p-4 border-b flex items-center justify-between bg-gray-50">
-                                <h3 className="font-bold text-lg flex items-center gap-2">
-                                    <History size={20} className="text-gray-500" />
-                                    Past Orders
-                                </h3>
-                                <button onClick={() => setShowPastOrders(false)} className="p-2 hover:bg-gray-200 rounded-full transition-colors">
-                                    <X size={20} />
-                                </button>
-                            </div>
-
-                            <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50/50">
-                                {pastOrders.map((order) => (
-                                    <div key={order.id} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
-                                        <div className="flex justify-between items-start mb-3">
-                                            <div>
-                                                <div className="text-xs text-gray-400 font-mono mb-1">#{order.orderNumber?.slice(-6).toUpperCase() || order.id.slice(0, 8)}</div>
-                                                <div className="font-bold text-gray-800">
-                                                    {new Date(order.createdAt).toLocaleDateString()}
-                                                </div>
-                                                <div className="text-xs text-gray-500">
-                                                    {new Date(order.createdAt).toLocaleTimeString()}
-                                                </div>
-                                            </div>
-                                            <div className={`px-2 py-1 rounded-lg text-xs font-bold ${order.status === 'COMPLETED' ? 'bg-green-100 text-green-700' :
-                                                order.status === 'CANCELLED' ? 'bg-red-100 text-red-700' :
-                                                    'bg-blue-100 text-blue-700'
-                                                }`}>
-                                                {order.status}
-                                            </div>
-                                        </div>
-
-                                        <div className="space-y-2 border-t border-dashed border-gray-100 pt-3">
-                                            {order.items.map((item, idx) => (
-                                                <div key={idx} className="flex justify-between text-sm">
-                                                    <span className="text-gray-600">
-                                                        <span className="font-bold text-gray-800">{item.quantity}x</span> {item.menuItem?.name || 'Unknown Item'}
-                                                    </span>
-                                                </div>
-                                            ))}
-                                        </div>
-
-                                        <div className="mt-3 pt-2 border-t border-gray-100 flex justify-between items-center">
-                                            <span className="text-sm text-gray-500">Total</span>
-                                            <span className="font-bold text-lg">₹{order.totalAmount}</span>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
-                )
-            }
+            {/* Note: Separate Past Orders Modal removed in favor of unified OrdersModal */}
 
             {/* Floating Glass Cart */}
             {
@@ -849,6 +796,8 @@ function OrderContent() {
                 onClose={() => setIsOrdersOpen(false)}
                 restaurantId={session?.restaurant.id || ''}
                 phone={identity?.phone || ''}
+                deviceToken={deviceToken || undefined}
+                initialTab={ordersModalTab}
                 theme={THEME}
             />
 
