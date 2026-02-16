@@ -163,7 +163,8 @@ export const getMenu = async (restaurantId: string): Promise<Category[]> => {
 export const placeOrder = async (
     items: { menuItemId: string; quantity: number; price: number }[],
     totalAmount: number,
-    tableId?: string
+    tableId?: string,
+    deviceToken?: string
 ) => {
     try {
         // Use provided tableId or fall back to stored currentTableId
@@ -172,7 +173,8 @@ export const placeOrder = async (
         const response = await api.post('/customer/orders', {
             items,
             totalAmount,
-            tableId: orderTableId
+            tableId: orderTableId,
+            deviceToken
         });
         // Backend returns { success: true, order: { id, orderNumber, ... } }
         const order = response.data.order || {};
@@ -258,9 +260,10 @@ export const getTableInfo = async (tableId: string): Promise<TableInfoResponse> 
 
 export interface OrderItem {
     id: string;
-    name: string;
+    name?: string; // Optional if not returned directly
     quantity: number;
     price: number;
+    menuItem?: MenuItem;
 }
 
 export interface CustomerOrder {
@@ -294,6 +297,18 @@ export const getCustomerOrders = async (restaurantId: string, phone: string): Pr
 
         console.error('Failed to fetch orders:', error);
         throw error;
+    }
+};
+
+export const getPastOrders = async (deviceToken: string): Promise<CustomerOrder[]> => {
+    try {
+        const response = await api.get('/customer/orders/history', {
+            params: { deviceToken }
+        });
+        return response.data.orders || [];
+    } catch (error) {
+        console.error('Failed to get past orders:', error);
+        return [];
     }
 };
 

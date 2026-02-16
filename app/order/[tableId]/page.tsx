@@ -21,9 +21,11 @@ import {
     Loader2,
     Wallet,
     Banknote,
-    ClipboardList
+    ClipboardList,
+    Clock,
+    History
 } from 'lucide-react';
-import { getTableInfo, placeOrder, SessionData, Category, MenuItem } from '@/lib/api';
+import { getTableInfo, placeOrder, getPastOrders, SessionData, Category, MenuItem, CustomerOrder } from '@/lib/api';
 import OrdersModal from '@/components/order/OrdersModal';
 
 // --- Configuration & Data ---
@@ -177,6 +179,11 @@ function OrderContent() {
     const [orderSuccess, setOrderSuccess] = useState<string | null>(null);
     const [orderError, setOrderError] = useState<string | null>(null);
 
+    // Past Orders State
+    const [pastOrders, setPastOrders] = useState<CustomerOrder[]>([]);
+    const [showPastOrders, setShowPastOrders] = useState(false);
+    const [deviceToken, setDeviceToken] = useState<string | null>(null);
+
     // UI state
     const [activeCategory, setActiveCategory] = useState("All");
     const [searchQuery, setSearchQuery] = useState("");
@@ -216,6 +223,36 @@ function OrderContent() {
 
         loadData();
     }, [tableId]);
+
+    // Device Token & Past Orders Logic
+    useEffect(() => {
+        const initDeviceToken = async () => {
+            let token = localStorage.getItem('dinestack_device_token');
+            if (!token) {
+                // Generate simple UUID-like string if crypto.randomUUID not available (though it is in modern browsers)
+                try {
+                    token = crypto.randomUUID();
+                } catch (e) {
+                    token = Math.random().toString(36).substring(2) + Date.now().toString(36);
+                }
+                localStorage.setItem('dinestack_device_token', token);
+            }
+            setDeviceToken(token);
+
+            if (token) {
+                try {
+                    const history = await getPastOrders(token);
+                    setPastOrders(history);
+                } catch (e) {
+                    console.error("Failed to load past orders", e);
+                }
+            }
+        };
+
+        if (session) {
+            initDeviceToken();
+        }
+    }, [session]);
 
     // Identity Logic
     useEffect(() => {
@@ -305,7 +342,12 @@ function OrderContent() {
                 };
             });
 
-            const result = await placeOrder(orderItems, cartTotal, tableId);
+            const result = await placeOrder(
+                orderItems,
+                cartTotal,
+                tableId,
+                deviceToken || undefined
+            );
 
             setCart({});
             setOrderSuccess(result.orderNumber || 'placed');
@@ -538,179 +580,268 @@ function OrderContent() {
                         ))}
                     </div>
                 )}
-            </main>
 
-            {/* Floating Glass Cart */}
-            {cartItemCount > 0 && !isCartOpen && (
-                <div className="absolute bottom-8 left-6 right-6 z-50 animate-bounce-in">
-                    <button
-                        onClick={() => setIsCartOpen(true)}
-                        className="w-full h-16 relative overflow-hidden rounded-2xl shadow-xl flex items-center justify-between px-1 group active:scale-[0.98] transition-transform"
-                        style={{
-                            backgroundColor: THEME.primary,
-                            color: 'white',
-                            boxShadow: '0 10px 30px -10px rgba(139, 30, 63, 0.5)'
-                        }}
-                    >
-                        {/* Sheen */}
-                        <div className="absolute inset-0 bg-gradient-to-b from-white/10 to-transparent pointer-events-none" />
-
-                        <div className="flex items-center gap-4 pl-4 relative z-10">
-                            <div className="bg-white/20 px-3 py-1.5 rounded-lg flex flex-col leading-none">
-                                <span className="text-[10px] text-white/80 font-bold uppercase">Items</span>
-                                <span className="text-lg font-bold text-white">{cartItemCount}</span>
-                            </div>
-                            <div className="flex flex-col items-start leading-none">
-                                <span className="text-[10px] text-white/80 font-bold uppercase tracking-wider">Total</span>
-                                <span className="text-xl font-black text-white">₹{cartTotal.toFixed(2)}</span>
-                            </div>
-                        </div>
-
-                        <div className="pr-5 relative z-10 flex items-center gap-2 text-white font-bold text-sm uppercase tracking-wide">
-                            Checkout <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform" />
-                        </div>
-                    </button>
-                </div>
-            )}
-
-            {/* Cart Modal (Sheet) */}
-            {isCartOpen && !placingOrder && (
-                <div className="absolute inset-0 z-50 flex flex-col justify-end bg-black/60 backdrop-blur-sm animate-fade-in">
-                    <div className="absolute inset-0" onClick={() => setIsCartOpen(false)} />
-
-                    <div className="w-full bg-white rounded-t-[40px] max-h-[85vh] flex flex-col shadow-2xl animate-slide-up relative" style={{ backgroundColor: '#FFFBEA' }}>
-
-                        {/* Handle */}
-                        <div className="w-full flex justify-center pt-4 pb-2" onClick={() => setIsCartOpen(false)}>
-                            <div className="w-16 h-1 bg-gray-300 rounded-full" />
-                        </div>
-
-                        <div className="px-8 py-4 flex items-center justify-between">
-                            <h2 className="text-2xl font-light" style={{ color: THEME.text }}>Your <span className="font-bold" style={{ color: THEME.primary }}>Order</span></h2>
-                            <button onClick={() => setIsCartOpen(false)} className="bg-gray-100 p-2 rounded-full text-gray-500 hover:text-gray-900 transition-colors">
-                                <X size={20} />
-                            </button>
-                        </div>
-
-                        {/* Cart Items */}
-                        <div className="flex-1 overflow-y-auto px-8 py-2 space-y-6">
-                            {Object.entries(cart).map(([id, qty]) => {
-                                const item = allMenuItems.find(i => i.id === id);
-                                return item ? (
-                                    <div key={id} className="flex justify-between items-center group">
-                                        <div className="flex flex-col">
-                                            <div className="flex items-center gap-2 mb-1">
-                                                <DotIndicator isVegetarian={item.isVegetarian} />
-                                                <span className="font-medium text-lg" style={{ color: THEME.text }}>{item.name}</span>
-                                            </div>
-                                            <span className="font-bold text-sm" style={{ color: THEME.primary }}>₹{(item.price * qty).toFixed(2)}</span>
-                                        </div>
-
-                                        <div className="flex items-center bg-white rounded-xl border p-1" style={{ borderColor: THEME.border }}>
-                                            <button onClick={() => handleRemoveFromCart(item.id)} className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"><Minus size={14} /></button>
-                                            <span className="w-8 text-center text-sm font-bold" style={{ color: THEME.text }}>{qty}</span>
-                                            <button onClick={() => handleAddToCart(item.id)} className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-green-500 hover:bg-green-50 rounded-lg transition-colors"><Plus size={14} /></button>
-                                        </div>
-                                    </div>
-                                ) : null;
-                            })}
-                        </div>
-
-                        {/* Checkout Area */}
-                        <div className="p-8 pb-safe rounded-t-[40px] mt-2 border-t border-gray-100 bg-white">
-                            <div className="flex justify-between items-center mb-6">
-                                <span className="text-gray-400 font-medium">Grand Total</span>
-                                <span className="text-3xl font-light" style={{ color: THEME.text }}>₹{cartTotal.toFixed(2)}</span>
-                            </div>
-
-                            {/* Payment Method Selection */}
-                            <div className="mb-6">
-                                <span className="text-xs font-bold uppercase tracking-widest mb-3 block" style={{ color: THEME.textMuted }}>Payment Method</span>
-                                <div className="flex gap-3">
-                                    <button
-                                        onClick={() => setPaymentMethod('online')}
-                                        className={`flex-1 flex items-center justify-center gap-2 py-4 rounded-xl border-2 transition-all font-semibold ${paymentMethod === 'online'
-                                            ? 'border-[#8B1E3F] bg-[#8B1E3F]/5'
-                                            : 'border-gray-200 bg-white hover:border-gray-300'
-                                            }`}
-                                        style={{ color: paymentMethod === 'online' ? THEME.primary : THEME.textMuted }}
-                                    >
-                                        <Wallet size={20} />
-                                        <span>Online</span>
-                                    </button>
-                                    <button
-                                        onClick={() => setPaymentMethod('cash')}
-                                        className={`flex-1 flex items-center justify-center gap-2 py-4 rounded-xl border-2 transition-all font-semibold ${paymentMethod === 'cash'
-                                            ? 'border-[#8B1E3F] bg-[#8B1E3F]/5'
-                                            : 'border-gray-200 bg-white hover:border-gray-300'
-                                            }`}
-                                        style={{ color: paymentMethod === 'cash' ? THEME.primary : THEME.textMuted }}
-                                    >
-                                        <Banknote size={20} />
-                                        <span>Cash</span>
-                                    </button>
-                                </div>
-                            </div>
-                            <button
-                                onClick={handlePlaceOrder}
-                                className="w-full text-white h-16 rounded-2xl font-bold text-lg uppercase tracking-widest shadow-lg active:scale-[0.98] transition-all flex items-center justify-center gap-2 group"
-                                style={{ backgroundColor: THEME.primary }}
-                            >
-                                Confirm Order <ChevronRight className="group-hover:translate-x-1 transition-transform" />
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* FULL SCREEN LOADING OVERLAY */}
-            {placingOrder && (
-                <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-white/90 backdrop-blur-md animate-in fade-in duration-300">
-                    <div className="relative">
-                        <div className="w-20 h-20 border-4 border-gray-100 rounded-full" />
-                        <div className="absolute top-0 left-0 w-20 h-20 border-4 border-t-transparent rounded-full animate-spin" style={{ borderColor: THEME.primary, borderTopColor: 'transparent' }} />
-                        <ChefHat size={32} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" style={{ color: THEME.primary }} />
-                    </div>
-                    <h2 className="mt-6 text-xl font-bold" style={{ color: THEME.text }}>Sending to Kitchen...</h2>
-                    <p className="mt-2 text-sm max-w-xs text-center" style={{ color: THEME.textMuted }}>Please wait while we confirm your order with the restaurant.</p>
-                </div>
-            )}
-
-            {/* Order Success Toast */}
-            {orderSuccess && (
-                <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[60] w-[90%] max-w-sm animate-in slide-in-from-top-4 fade-in duration-300">
-                    <div className="bg-green-600 text-white px-4 py-3 rounded-xl shadow-xl flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center shrink-0">
-                            <CheckCircle2 size={18} className="text-white" />
-                        </div>
-                        <div>
-                            <h4 className="font-bold text-sm">Order Sent Successfully!</h4>
-                            <p className="text-white/90 text-xs mt-0.5">Order #{orderSuccess} has been placed.</p>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Order Error Toast */}
-            {orderError && (
-                <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[60] w-[90%] max-w-sm animate-in slide-in-from-top-4 fade-in duration-300">
-                    <div className="bg-red-600 text-white px-4 py-3 rounded-xl shadow-xl flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center shrink-0">
-                            <AlertCircle size={18} className="text-white" />
-                        </div>
-                        <div className="flex-1">
-                            <h4 className="font-bold text-sm">Order Failed</h4>
-                            <p className="text-white/90 text-xs mt-0.5">{orderError}</p>
+                {/* Past Orders Banner */}
+                {pastOrders.length > 0 && !isCartOpen && (
+                    <div className="mx-6 mt-4 mb-2 p-4 rounded-xl shadow-sm border border-orange-100 flex items-center justify-between animate-fade-in"
+                        style={{ backgroundColor: '#FFF8E1' }}>
+                        <div className="flex flex-col">
+                            <span className="font-bold text-orange-800 flex items-center gap-2">
+                                <span className="text-xl">👋</span> Welcome Back!
+                            </span>
+                            <span className="text-xs text-orange-600 mt-1">You have ordered here before.</span>
                         </div>
                         <button
-                            onClick={() => setOrderError(null)}
-                            className="p-1 hover:bg-white/10 rounded-full transition-colors"
+                            onClick={() => setShowPastOrders(true)}
+                            className="px-4 py-2 bg-white text-orange-700 text-sm font-bold rounded-lg shadow-sm border border-orange-200 hover:bg-orange-50 active:scale-95 transition-all flex items-center gap-2"
                         >
-                            <X size={16} />
+                            <History size={16} />
+                            View History
                         </button>
                     </div>
-                </div>
-            )}
+                )}
+            </main>
+
+            {/* Past Orders Modal */}
+            {
+                showPastOrders && (
+                    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm animate-fade-in p-4">
+                        <div className="absolute inset-0" onClick={() => setShowPastOrders(false)} />
+                        <div className="relative w-full max-w-lg bg-white rounded-2xl shadow-2xl max-h-[80vh] flex flex-col overflow-hidden animate-slide-up">
+                            <div className="p-4 border-b flex items-center justify-between bg-gray-50">
+                                <h3 className="font-bold text-lg flex items-center gap-2">
+                                    <History size={20} className="text-gray-500" />
+                                    Past Orders
+                                </h3>
+                                <button onClick={() => setShowPastOrders(false)} className="p-2 hover:bg-gray-200 rounded-full transition-colors">
+                                    <X size={20} />
+                                </button>
+                            </div>
+
+                            <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50/50">
+                                {pastOrders.map((order) => (
+                                    <div key={order.id} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+                                        <div className="flex justify-between items-start mb-3">
+                                            <div>
+                                                <div className="text-xs text-gray-400 font-mono mb-1">#{order.orderNumber?.slice(-6).toUpperCase() || order.id.slice(0, 8)}</div>
+                                                <div className="font-bold text-gray-800">
+                                                    {new Date(order.createdAt).toLocaleDateString()}
+                                                </div>
+                                                <div className="text-xs text-gray-500">
+                                                    {new Date(order.createdAt).toLocaleTimeString()}
+                                                </div>
+                                            </div>
+                                            <div className={`px-2 py-1 rounded-lg text-xs font-bold ${order.status === 'COMPLETED' ? 'bg-green-100 text-green-700' :
+                                                order.status === 'CANCELLED' ? 'bg-red-100 text-red-700' :
+                                                    'bg-blue-100 text-blue-700'
+                                                }`}>
+                                                {order.status}
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-2 border-t border-dashed border-gray-100 pt-3">
+                                            {order.items.map((item, idx) => (
+                                                <div key={idx} className="flex justify-between text-sm">
+                                                    <span className="text-gray-600">
+                                                        <span className="font-bold text-gray-800">{item.quantity}x</span> {item.menuItem?.name || 'Unknown Item'}
+                                                    </span>
+                                                </div>
+                                            ))}
+                                        </div>
+
+                                        <div className="mt-3 pt-2 border-t border-gray-100 flex justify-between items-center">
+                                            <span className="text-sm text-gray-500">Total</span>
+                                            <span className="font-bold text-lg">₹{order.totalAmount}</span>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                )
+            }
+
+            {/* Floating Glass Cart */}
+            {
+                cartItemCount > 0 && !isCartOpen && (
+                    <div className="absolute bottom-8 left-6 right-6 z-50 animate-bounce-in">
+                        <button
+                            onClick={() => setIsCartOpen(true)}
+                            className="w-full h-16 relative overflow-hidden rounded-2xl shadow-xl flex items-center justify-between px-1 group active:scale-[0.98] transition-transform"
+                            style={{
+                                backgroundColor: THEME.primary,
+                                color: 'white',
+                                boxShadow: '0 10px 30px -10px rgba(139, 30, 63, 0.5)'
+                            }}
+                        >
+                            {/* Sheen */}
+                            <div className="absolute inset-0 bg-gradient-to-b from-white/10 to-transparent pointer-events-none" />
+
+                            <div className="flex items-center gap-4 pl-4 relative z-10">
+                                <div className="bg-white/20 px-3 py-1.5 rounded-lg flex flex-col leading-none">
+                                    <span className="text-[10px] text-white/80 font-bold uppercase">Items</span>
+                                    <span className="text-lg font-bold text-white">{cartItemCount}</span>
+                                </div>
+                                <div className="flex flex-col items-start leading-none">
+                                    <span className="text-[10px] text-white/80 font-bold uppercase tracking-wider">Total</span>
+                                    <span className="text-xl font-black text-white">₹{cartTotal.toFixed(2)}</span>
+                                </div>
+                            </div>
+
+                            <div className="pr-5 relative z-10 flex items-center gap-2 text-white font-bold text-sm uppercase tracking-wide">
+                                Checkout <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform" />
+                            </div>
+                        </button>
+                    </div>
+                )
+            }
+
+            {/* Cart Modal (Sheet) */}
+            {
+                isCartOpen && !placingOrder && (
+                    <div className="absolute inset-0 z-50 flex flex-col justify-end bg-black/60 backdrop-blur-sm animate-fade-in">
+                        <div className="absolute inset-0" onClick={() => setIsCartOpen(false)} />
+
+                        <div className="w-full bg-white rounded-t-[40px] max-h-[85vh] flex flex-col shadow-2xl animate-slide-up relative" style={{ backgroundColor: '#FFFBEA' }}>
+
+                            {/* Handle */}
+                            <div className="w-full flex justify-center pt-4 pb-2" onClick={() => setIsCartOpen(false)}>
+                                <div className="w-16 h-1 bg-gray-300 rounded-full" />
+                            </div>
+
+                            <div className="px-8 py-4 flex items-center justify-between">
+                                <h2 className="text-2xl font-light" style={{ color: THEME.text }}>Your <span className="font-bold" style={{ color: THEME.primary }}>Order</span></h2>
+                                <button onClick={() => setIsCartOpen(false)} className="bg-gray-100 p-2 rounded-full text-gray-500 hover:text-gray-900 transition-colors">
+                                    <X size={20} />
+                                </button>
+                            </div>
+
+                            {/* Cart Items */}
+                            <div className="flex-1 overflow-y-auto px-8 py-2 space-y-6">
+                                {Object.entries(cart).map(([id, qty]) => {
+                                    const item = allMenuItems.find(i => i.id === id);
+                                    return item ? (
+                                        <div key={id} className="flex justify-between items-center group">
+                                            <div className="flex flex-col">
+                                                <div className="flex items-center gap-2 mb-1">
+                                                    <DotIndicator isVegetarian={item.isVegetarian} />
+                                                    <span className="font-medium text-lg" style={{ color: THEME.text }}>{item.name}</span>
+                                                </div>
+                                                <span className="font-bold text-sm" style={{ color: THEME.primary }}>₹{(item.price * qty).toFixed(2)}</span>
+                                            </div>
+
+                                            <div className="flex items-center bg-white rounded-xl border p-1" style={{ borderColor: THEME.border }}>
+                                                <button onClick={() => handleRemoveFromCart(item.id)} className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"><Minus size={14} /></button>
+                                                <span className="w-8 text-center text-sm font-bold" style={{ color: THEME.text }}>{qty}</span>
+                                                <button onClick={() => handleAddToCart(item.id)} className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-green-500 hover:bg-green-50 rounded-lg transition-colors"><Plus size={14} /></button>
+                                            </div>
+                                        </div>
+                                    ) : null;
+                                })}
+                            </div>
+
+                            {/* Checkout Area */}
+                            <div className="p-8 pb-safe rounded-t-[40px] mt-2 border-t border-gray-100 bg-white">
+                                <div className="flex justify-between items-center mb-6">
+                                    <span className="text-gray-400 font-medium">Grand Total</span>
+                                    <span className="text-3xl font-light" style={{ color: THEME.text }}>₹{cartTotal.toFixed(2)}</span>
+                                </div>
+
+                                {/* Payment Method Selection */}
+                                <div className="mb-6">
+                                    <span className="text-xs font-bold uppercase tracking-widest mb-3 block" style={{ color: THEME.textMuted }}>Payment Method</span>
+                                    <div className="flex gap-3">
+                                        <button
+                                            onClick={() => setPaymentMethod('online')}
+                                            className={`flex-1 flex items-center justify-center gap-2 py-4 rounded-xl border-2 transition-all font-semibold ${paymentMethod === 'online'
+                                                ? 'border-[#8B1E3F] bg-[#8B1E3F]/5'
+                                                : 'border-gray-200 bg-white hover:border-gray-300'
+                                                }`}
+                                            style={{ color: paymentMethod === 'online' ? THEME.primary : THEME.textMuted }}
+                                        >
+                                            <Wallet size={20} />
+                                            <span>Online</span>
+                                        </button>
+                                        <button
+                                            onClick={() => setPaymentMethod('cash')}
+                                            className={`flex-1 flex items-center justify-center gap-2 py-4 rounded-xl border-2 transition-all font-semibold ${paymentMethod === 'cash'
+                                                ? 'border-[#8B1E3F] bg-[#8B1E3F]/5'
+                                                : 'border-gray-200 bg-white hover:border-gray-300'
+                                                }`}
+                                            style={{ color: paymentMethod === 'cash' ? THEME.primary : THEME.textMuted }}
+                                        >
+                                            <Banknote size={20} />
+                                            <span>Cash</span>
+                                        </button>
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={handlePlaceOrder}
+                                    className="w-full text-white h-16 rounded-2xl font-bold text-lg uppercase tracking-widest shadow-lg active:scale-[0.98] transition-all flex items-center justify-center gap-2 group"
+                                    style={{ backgroundColor: THEME.primary }}
+                                >
+                                    Confirm Order <ChevronRight className="group-hover:translate-x-1 transition-transform" />
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )
+            }
+
+            {/* FULL SCREEN LOADING OVERLAY */}
+            {
+                placingOrder && (
+                    <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-white/90 backdrop-blur-md animate-in fade-in duration-300">
+                        <div className="relative">
+                            <div className="w-20 h-20 border-4 border-gray-100 rounded-full" />
+                            <div className="absolute top-0 left-0 w-20 h-20 border-4 border-t-transparent rounded-full animate-spin" style={{ borderColor: THEME.primary, borderTopColor: 'transparent' }} />
+                            <ChefHat size={32} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" style={{ color: THEME.primary }} />
+                        </div>
+                        <h2 className="mt-6 text-xl font-bold" style={{ color: THEME.text }}>Sending to Kitchen...</h2>
+                        <p className="mt-2 text-sm max-w-xs text-center" style={{ color: THEME.textMuted }}>Please wait while we confirm your order with the restaurant.</p>
+                    </div>
+                )
+            }
+
+            {/* Order Success Toast */}
+            {
+                orderSuccess && (
+                    <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[60] w-[90%] max-w-sm animate-in slide-in-from-top-4 fade-in duration-300">
+                        <div className="bg-green-600 text-white px-4 py-3 rounded-xl shadow-xl flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center shrink-0">
+                                <CheckCircle2 size={18} className="text-white" />
+                            </div>
+                            <div>
+                                <h4 className="font-bold text-sm">Order Sent Successfully!</h4>
+                                <p className="text-white/90 text-xs mt-0.5">Order #{orderSuccess} has been placed.</p>
+                            </div>
+                        </div>
+                    </div>
+                )
+            }
+
+            {/* Order Error Toast */}
+            {
+                orderError && (
+                    <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[60] w-[90%] max-w-sm animate-in slide-in-from-top-4 fade-in duration-300">
+                        <div className="bg-red-600 text-white px-4 py-3 rounded-xl shadow-xl flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center shrink-0">
+                                <AlertCircle size={18} className="text-white" />
+                            </div>
+                            <div className="flex-1">
+                                <h4 className="font-bold text-sm">Order Failed</h4>
+                                <p className="text-white/90 text-xs mt-0.5">{orderError}</p>
+                            </div>
+                            <button
+                                onClick={() => setOrderError(null)}
+                                className="p-1 hover:bg-white/10 rounded-full transition-colors"
+                            >
+                                <X size={16} />
+                            </button>
+                        </div>
+                    </div>
+                )
+            }
 
             {/* Orders Modal */}
             <OrdersModal
@@ -751,7 +882,7 @@ function OrderContent() {
         }
         .animate-fade-in { animation: fade-in 0.3s ease-out forwards; }
       `}</style>
-        </div>
+        </div >
     );
 }
 
