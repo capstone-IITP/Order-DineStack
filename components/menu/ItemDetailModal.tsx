@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useMemo } from 'react';
-import { ArrowLeft, Check, Leaf } from 'lucide-react';
+import { ArrowLeft, Check, Leaf, ShoppingBag } from 'lucide-react';
 import { MenuItem, OptionGroup, Option } from '../../types';
 import { useCart } from '../../contexts/CartContext';
 
@@ -174,13 +174,14 @@ export default function ItemDetailModal({ item, onClose }: ItemDetailModalProps)
                         <button
                             onClick={handleAddToCart}
                             disabled={!isValid}
-                            className={`flex-1 h-14 rounded-xl font-bold text-lg shadow-lg flex items-center justify-between px-6 transition-all ${isValid
+                            className={`flex-1 h-14 rounded-xl font-bold text-lg shadow-lg flex items-center justify-center gap-3 px-6 transition-all ${isValid
                                 ? 'bg-[#8D0B41] text-white hover:bg-[#B01E58] active:scale-[0.98] shadow-[#8D0B41]/25'
                                 : 'bg-gray-200 text-gray-400 cursor-not-allowed'
                                 }`}
                         >
-                            <span>Add to Cart</span>
-                            <span>₹{calculateTotal.toFixed(2)}</span>
+                            <span className="font-bold">Add to Cart</span>
+                            <span className="bg-white/20 px-2 py-0.5 rounded text-base">₹{calculateTotal.toFixed(0)}</span>
+                            <ShoppingBag className="w-5 h-5" />
                         </button>
                     </div>
                 </div>
