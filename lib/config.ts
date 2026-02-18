@@ -1,5 +1,7 @@
+const isProduction = process.env.NODE_ENV === 'production';
+
 const config = {
-    apiBaseUrl: process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:5001/api',
+    apiBaseUrl: process.env.NEXT_PUBLIC_API_BASE || (isProduction ? 'https://software.dinestack.in/api' : 'http://localhost:5001/api'),
 };
 
 // Validate configuration
