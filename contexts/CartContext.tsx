@@ -19,6 +19,7 @@ export interface CartItem {
     quantity: number;
     selectedOptions: Record<string, Option[]>;
     instructions?: string;
+    isVegetarian?: boolean;
 }
 
 interface CartContextType {

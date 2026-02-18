@@ -48,7 +48,8 @@ export default function MenuItemCard({ item, onClick }: MenuItemCardProps) {
                 basePrice: item.price,
                 finalPrice: item.price,
                 quantity: 1,
-                selectedOptions: {}
+                selectedOptions: {},
+                isVegetarian: item.isVegetarian
             });
         }
     };

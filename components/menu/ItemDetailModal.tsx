@@ -61,7 +61,8 @@ export default function ItemDetailModal({ item, onClose }: ItemDetailModalProps)
             finalPrice: calculateTotal / quantity,
             quantity,
             selectedOptions,
-            instructions
+            instructions,
+            isVegetarian: item.isVegetarian
         });
 
         handleClose();
