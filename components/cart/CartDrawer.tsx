@@ -182,21 +182,21 @@ export default function CartDrawer() {
                                                 </div>
 
                                                 {/* Quantity Stepper (Compact) */}
-                                                <div className="flex items-center bg-[#8D0B41]/5 rounded-lg border border-[#8D0B41]/10 h-8 shadow-sm shrink-0 ml-2">
+                                                <div className="flex flex-col items-center gap-1 bg-white rounded-full shadow-sm p-1 border border-gray-100 shrink-0 ml-2">
                                                     <button
-                                                        onClick={() => item.quantity > 1 ? updateQuantity(item.id, -1) : removeFromCart(item.id)}
-                                                        className="w-8 h-full flex items-center justify-center text-[#8D0B41] hover:bg-[#8D0B41]/10 rounded-l-lg transition-colors"
+                                                        onClick={() => updateQuantity(item.id, 1)}
+                                                        className="w-8 h-8 flex items-center justify-center bg-[#8D0B41] text-white rounded-full shadow-sm active:scale-90 transition-transform"
                                                     >
-                                                        {item.quantity === 1 ? <Trash2 size={14} className="text-red-500" /> : <Minus size={14} strokeWidth={2.5} />}
+                                                        <Plus className="w-4 h-4" strokeWidth={2.5} />
                                                     </button>
-                                                    <span className="w-8 text-center text-sm font-bold text-[#8D0B41] tabular-nums">
+                                                    <span className="text-sm font-bold text-gray-900 w-8 text-center py-0.5">
                                                         {item.quantity}
                                                     </span>
                                                     <button
-                                                        onClick={() => updateQuantity(item.id, 1)}
-                                                        className="w-8 h-full flex items-center justify-center text-[#8D0B41] hover:bg-[#8D0B41]/10 rounded-r-lg transition-colors"
+                                                        onClick={() => item.quantity > 1 ? updateQuantity(item.id, -1) : removeFromCart(item.id)}
+                                                        className="w-8 h-8 flex items-center justify-center bg-white border border-gray-200 text-gray-600 rounded-full shadow-sm hover:bg-gray-50 active:scale-90 transition-transform"
                                                     >
-                                                        <Plus size={14} strokeWidth={2.5} />
+                                                        {item.quantity === 1 ? <Trash2 className="w-4 h-4 text-red-500" /> : <Minus className="w-4 h-4" strokeWidth={2.5} />}
                                                     </button>
                                                 </div>
                                             </div>
