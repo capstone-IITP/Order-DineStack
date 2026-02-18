@@ -81,7 +81,7 @@ export default function CartDrawer() {
                                                     <h4 className="font-bold text-gray-900 line-clamp-1">{item.name}</h4>
                                                     <p className="text-xs text-gray-500 line-clamp-1">
                                                         {/* Show options mock */}
-                                                        {Object.values(item.selectedOptions).flat().map(o => o.name).join(', ')}
+                                                        {item.selectedOptions ? Object.values(item.selectedOptions).flat().map(o => o.name).join(', ') : ''}
                                                     </p>
                                                 </div>
 

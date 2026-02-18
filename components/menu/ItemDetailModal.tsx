@@ -53,19 +53,23 @@ export default function ItemDetailModal({ item, onClose }: ItemDetailModalProps)
     const handleAddToCart = () => {
         if (!isValid) return;
 
-        addToCart({
-            menuItemId: item.id,
-            name: item.name,
-            image: item.image,
-            basePrice: item.price,
-            finalPrice: calculateTotal / quantity,
-            quantity,
-            selectedOptions,
-            instructions,
-            isVegetarian: item.isVegetarian
-        });
-
-        handleClose();
+        try {
+            addToCart({
+                menuItemId: item.id,
+                name: item.name,
+                image: item.image,
+                basePrice: item.price,
+                finalPrice: calculateTotal / quantity,
+                quantity,
+                selectedOptions,
+                instructions,
+                isVegetarian: item.isVegetarian
+            });
+            handleClose();
+        } catch (error) {
+            console.error("Error adding to cart:", error);
+            // Optionally show an error toast here
+        }
     };
 
     return (

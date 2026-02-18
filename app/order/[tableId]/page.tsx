@@ -30,6 +30,7 @@ import { MenuItem } from '@/types';
 import OrdersModal from '@/components/order/OrdersModal';
 import MenuItemCard from '@/components/menu/MenuItemCard';
 import ItemDetailModal from '@/components/menu/ItemDetailModal';
+import FloatingCartButton from '@/components/cart/FloatingCartButton';
 
 // --- Configuration & Data ---
 
@@ -478,7 +479,8 @@ function OrderContent() {
                 )}
             </main>
 
-            {/* Floating Cart Button is now handled by layout.tsx globally! */}
+            {/* Floating Cart Button */}
+            {!selectedItem && <FloatingCartButton />}
 
             {/* Orders Modal */}
             <OrdersModal

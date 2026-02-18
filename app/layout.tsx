@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono, Playfair_Display, Outfit } from "next/font/google";
 import "./globals.css";
 import { CartProvider } from "@/contexts/CartContext";
-import FloatingCartButton from "@/components/cart/FloatingCartButton";
 import CartDrawer from "@/components/cart/CartDrawer";
 
 const geistSans = Geist({
@@ -47,7 +46,6 @@ export default function RootLayout({
       >
         <CartProvider>
           {children}
-          <FloatingCartButton />
           <CartDrawer />
         </CartProvider>
       </body>
