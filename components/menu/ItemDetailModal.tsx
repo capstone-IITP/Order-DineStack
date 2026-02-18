@@ -76,10 +76,10 @@ export default function ItemDetailModal({ item, onClose }: ItemDetailModalProps)
         <div className={`fixed inset-0 z-50 flex items-end sm:items-center justify-center pointer-events-none ${isClosing ? 'animate-fade-out' : 'animate-fade-in'}`}>
             <div className="absolute inset-0 bg-black/30 backdrop-blur-[2px]" onClick={handleClose} style={{ pointerEvents: 'auto' }}></div>
             <div
-                className={`bg-white w-full max-w-lg h-[92vh] sm:h-auto sm:max-h-[85vh] rounded-t-3xl sm:rounded-3xl flex flex-col shadow-2xl transform transition-transform duration-300 pointer-events-auto ${isClosing ? 'translate-y-full' : 'translate-y-0 animate-slide-up-spring'}`}
+                className={`bg-white w-full sm:max-w-lg h-[92vh] sm:h-auto sm:max-h-[85vh] rounded-t-[2rem] sm:rounded-[2rem] flex flex-col shadow-2xl transform transition-transform duration-300 pointer-events-auto ${isClosing ? 'translate-y-full' : 'translate-y-0 animate-slide-up-spring'}`}
             >
                 {/* Header */}
-                <div className="relative shrink-0 overflow-hidden rounded-t-3xl h-48 sm:h-56">
+                <div className="relative shrink-0 overflow-hidden rounded-t-[2rem] h-48 sm:h-56">
                     <div className="absolute inset-0 bg-gradient-to-br from-[#5A0528] to-[#2b0213]"></div>
                     {/* Decorative circles */}
                     <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
@@ -87,14 +87,14 @@ export default function ItemDetailModal({ item, onClose }: ItemDetailModalProps)
 
                     <button
                         onClick={handleClose}
-                        className="absolute top-4 left-4 w-10 h-10 bg-white/10 backdrop-blur-md border border-white/20 text-white rounded-full flex items-center justify-center hover:bg-white/20 transition-all z-10"
+                        className="absolute top-4 left-4 w-10 h-10 bg-white/10 backdrop-blur-md border border-white/20 text-white rounded-full flex items-center justify-center hover:bg-white/20 transition-all z-10 active:scale-95"
                     >
                         <ArrowLeft className="w-5 h-5" />
                     </button>
 
-                    <div className="absolute bottom-0 left-0 right-0 p-6 text-white z-10">
-                        <h2 className="text-3xl font-serif-custom font-bold leading-tight mb-2 drop-shadow-sm">{item.name}</h2>
-                        <div className="flex items-center gap-3 text-sm font-medium opacity-90">
+                    <div className="absolute bottom-0 left-0 right-0 p-5 sm:p-6 text-white z-10">
+                        <h2 className="text-2xl sm:text-3xl font-serif-custom font-bold leading-tight mb-2 drop-shadow-sm">{item.name}</h2>
+                        <div className="flex items-center gap-2 sm:gap-3 text-sm font-medium opacity-90">
                             <span className="bg-white/10 backdrop-blur px-3 py-1 rounded-full border border-white/10">₹{item.price}</span>
                             {item.isVegetarian && <span className="flex items-center gap-1.5"><Leaf className="w-4 h-4 text-green-300" /> Vegetarian</span>}
                             {item.isSpicy && <span className="flex items-center gap-1.5">🌶️ Spicy</span>}

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from 'react';
+import { useState } from 'react';
 import {
     ArrowLeft,
     Trash2,
@@ -108,15 +108,15 @@ export default function CartDrawer() {
                 {/* --- 1. NEW BIG HEADER (The "Unique" Design) --- */}
                 {/* Only Show Header in Cart View */}
                 {view === 'cart' && (
-                    <div className="bg-gradient-to-br from-[#5A0528] to-[#2b0213] pt-10 pb-16 px-6 relative overflow-hidden shrink-0">
+                    <div className="bg-gradient-to-br from-[#5A0528] to-[#2b0213] pt-8 sm:pt-10 pb-12 sm:pb-16 px-4 sm:px-6 relative overflow-hidden shrink-0">
                         {/* Background Decorative Gradient */}
                         <div className="absolute top-0 right-0 w-64 h-64 bg-[#a00d4a] rounded-full blur-3xl opacity-50 -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
 
                         {/* Nav Bar */}
-                        <div className="flex justify-between items-center mb-8 relative z-10">
+                        <div className="flex justify-between items-center mb-6 sm:mb-8 relative z-10">
                             <button
                                 onClick={handleClose}
-                                className="w-10 h-10 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center text-white border border-white/10 active:scale-95 transition-all"
+                                className="w-9 h-9 sm:w-10 sm:h-10 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center text-white border border-white/10 active:scale-95 transition-all"
                             >
                                 <ArrowLeft size={20} />
                             </button>
@@ -133,7 +133,7 @@ export default function CartDrawer() {
 
                         {/* Big Title & Info */}
                         <div className="relative z-10">
-                            <h1 className="text-3xl font-extrabold text-white mb-3 tracking-tight">My Cart</h1>
+                            <h1 className="text-2xl sm:text-3xl font-extrabold text-white mb-3 tracking-tight">My Cart</h1>
                             <div className="flex items-center gap-3">
                                 <div className="bg-white/10 backdrop-blur-sm px-3 py-1 rounded-full border border-white/5 flex items-center gap-2">
                                     <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
@@ -150,7 +150,7 @@ export default function CartDrawer() {
 
 
                 {/* --- 2. Main Content Area --- */}
-                <div className={`flex-1 ${view === 'cart' ? '-mt-8 relative z-20 rounded-t-[32px] bg-[#F4F1EE]' : 'bg-white'} overflow-y-auto scroll-smooth shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.2)] scrollbar-hide`}>
+                <div className={`flex-1 ${view === 'cart' ? '-mt-6 sm:-mt-8 relative z-20 rounded-t-[24px] sm:rounded-t-[32px] bg-[#F4F1EE]' : 'bg-white'} overflow-y-auto scroll-smooth shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.2)] scrollbar-hide`}>
 
                     {view === 'cart' ? (
                         cartItems.length === 0 ? (
@@ -165,7 +165,7 @@ export default function CartDrawer() {
                                 </div>
 
                                 {/* Items Summary Header */}
-                                <div className="px-6 mt-4 mb-3 flex items-center justify-between">
+                                <div className="px-4 sm:px-6 mt-4 mb-3 flex items-center justify-between">
                                     <h2 className="text-sm font-bold text-stone-600 uppercase tracking-wide">Order Details</h2>
                                     <span className="text-xs font-bold text-[#8D0B41] bg-[#8D0B41]/10 px-2 py-0.5 rounded-md">
                                         {cartItems.reduce((acc, item) => acc + item.quantity, 0)} items
@@ -173,7 +173,7 @@ export default function CartDrawer() {
                                 </div>
 
                                 {/* Cart List */}
-                                <div className="mx-4 bg-white rounded-2xl shadow-sm border border-stone-100 overflow-hidden">
+                                <div className="mx-3 sm:mx-4 bg-white rounded-2xl shadow-sm border border-stone-100 overflow-hidden">
                                     {cartItems.map(item => (
                                         <div key={item.id} className="bg-white p-4 border-b border-dashed border-stone-200 last:border-0 first:rounded-t-xl last:rounded-b-xl">
                                             <div className="flex justify-between items-start mb-2">
@@ -237,7 +237,7 @@ export default function CartDrawer() {
                                 </div>
 
                                 {/* Offers / Coupon Section */}
-                                <div className="mx-4 mt-4 bg-white p-4 rounded-2xl shadow-sm border border-dashed border-stone-300 flex items-center gap-4 cursor-pointer hover:bg-stone-50 transition-colors group">
+                                <div className="mx-3 sm:mx-4 mt-4 bg-white p-4 rounded-2xl shadow-sm border border-dashed border-stone-300 flex items-center gap-4 cursor-pointer hover:bg-stone-50 transition-colors group">
                                     <div className="w-10 h-10 bg-[#8D0B41]/5 rounded-full flex items-center justify-center group-hover:bg-[#8D0B41]/10 transition-colors">
                                         <TicketPercent size={20} className="text-[#8D0B41]" />
                                     </div>
@@ -249,7 +249,7 @@ export default function CartDrawer() {
                                 </div>
 
                                 {/* Bill Details */}
-                                <div className="mx-4 mt-6 mb-4">
+                                <div className="mx-3 sm:mx-4 mt-6 mb-4">
                                     <h2 className="text-sm font-bold text-stone-600 uppercase tracking-wide mb-3 px-1">Payment Summary</h2>
                                     <div className="bg-white rounded-2xl shadow-sm border border-stone-100 p-5 relative overflow-hidden">
                                         <BillRow label="Item Total" value={formatCurrency(subtotal)} />
@@ -293,7 +293,7 @@ export default function CartDrawer() {
                 {/* --- 4. Sticky Checkout Footer --- */}
                 {view === 'cart' && cartItems.length > 0 && (
                     <div className="fixed bottom-0 left-0 right-0 z-40 flex justify-center pointer-events-none">
-                        <div className="w-full max-w-md bg-white border-t border-stone-100 p-4 pb-safe shadow-[0_-5px_30px_rgba(0,0,0,0.08)] pointer-events-auto rounded-t-[24px]">
+                        <div className="w-full max-w-md bg-white border-t border-stone-100 p-3 sm:p-4 pb-safe shadow-[0_-5px_30px_rgba(0,0,0,0.08)] pointer-events-auto rounded-t-[24px]">
 
                             <div className="flex justify-between items-center mb-4 px-1">
                                 <div className="flex items-center gap-2">
@@ -307,7 +307,7 @@ export default function CartDrawer() {
 
                             <button
                                 onClick={() => setView('checkout')}
-                                className="w-full h-14 bg-gradient-to-r from-[#8D0B41] to-[#6b0831] rounded-2xl shadow-lg shadow-[#8D0B41]/30 flex items-center justify-between px-5 active:scale-[0.98] transition-all group"
+                                className="w-full h-12 sm:h-14 bg-gradient-to-r from-[#8D0B41] to-[#6b0831] rounded-2xl shadow-lg shadow-[#8D0B41]/30 flex items-center justify-between px-5 active:scale-[0.98] transition-all group"
                             >
                                 <div className="flex flex-col items-start">
                                     <span className="text-[10px] text-white/80 uppercase font-bold tracking-wider mb-0.5">Total to Pay</span>
@@ -329,7 +329,7 @@ export default function CartDrawer() {
                 {showClearCartConfirm && (
                     <div className="absolute inset-0 z-[60] flex items-center justify-center p-4">
                         <div className="absolute inset-0 bg-black/20 backdrop-blur-[2px] animate-fade-in" onClick={() => setShowClearCartConfirm(false)}></div>
-                        <div className="bg-white rounded-2xl shadow-xl w-full max-w-xs p-6 relative z-10 animate-scale-in">
+                        <div className="bg-white rounded-2xl shadow-xl w-full max-w-xs mx-4 p-6 relative z-10 animate-scale-in">
                             <div className="w-12 h-12 bg-red-50 rounded-full flex items-center justify-center mb-4 mx-auto">
                                 <Trash2 className="text-[#8D0B41] w-6 h-6" />
                             </div>

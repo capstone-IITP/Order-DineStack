@@ -349,7 +349,7 @@ function OrderContent() {
 
             {/* Header */}
             <div className="flex-none z-40 relative">
-                <div className="px-6 pt-8 pb-2 flex justify-between items-end">
+                <div className="px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8 pb-2 flex justify-between items-end max-w-7xl mx-auto w-full">
                     <div>
                         <h2 className="text-xs font-bold uppercase tracking-[0.2em] mb-1" style={{ color: THEME.secondary }}>
                             {session?.restaurant.name || 'Fine Dining'}
@@ -382,8 +382,8 @@ function OrderContent() {
                 </div>
 
                 {/* Categories (Floating Pills) */}
-                <div className="overflow-x-auto no-scrollbar pt-6 pb-2 pl-6">
-                    <div className="flex gap-4 min-w-max pr-6">
+                <div className="overflow-x-auto no-scrollbar pt-4 sm:pt-6 pb-2 px-4 sm:px-6 lg:px-8">
+                    <div className="flex gap-3 sm:gap-4 min-w-max mx-auto max-w-7xl">
                         {categories.map(cat => {
                             const isActive = activeCategory === cat.id;
                             const Icon = cat.icon;
@@ -418,7 +418,7 @@ function OrderContent() {
                 </div>
 
                 {/* Quick Filter Bar */}
-                <div className="px-6 mt-2 flex gap-3 overflow-x-auto no-scrollbar">
+                <div className="px-4 sm:px-6 lg:px-8 mt-2 flex gap-3 overflow-x-auto no-scrollbar max-w-7xl mx-auto w-full">
                     <button
                         onClick={() => setFilters(p => ({ vegOnly: !p.vegOnly, nonVeg: false }))}
                         className={`px-4 py-2 rounded-full text-[10px] font-bold uppercase tracking-widest border transition-all ${filters.vegOnly ? 'bg-green-50 border-green-600 text-green-700' : 'bg-transparent border-gray-300 text-gray-500'}`}
@@ -435,48 +435,50 @@ function OrderContent() {
             </div>
 
             {/* Main Content */}
-            <main className="flex-1 overflow-y-auto scroll-smooth px-6 pt-6 pb-32 w-full overscroll-contain no-scrollbar relative z-10">
+            <main className="flex-1 overflow-y-auto scroll-smooth w-full overscroll-contain no-scrollbar relative z-10">
+                <div className="px-4 sm:px-6 lg:px-8 py-6 pb-32 max-w-7xl mx-auto">
 
-                {filteredItems.length === 0 ? (
-                    <div className="h-64 flex flex-col items-center justify-center text-center opacity-40">
-                        <Utensils size={48} className="mb-4" style={{ color: THEME.textMuted }} />
-                        <p className="font-light" style={{ color: THEME.textMuted }}>Our chefs are resting.<br />Try different filters.</p>
-                    </div>
-                ) : (
-                    <div className="space-y-6">
-                        {filteredItems.map((item, index) => (
-                            <div key={item.id} className="animate-fade-in-up" style={{ animationDelay: `${index * 50}ms` }}>
-                                <MenuItemCard
-                                    item={item}
-                                    onClick={() => setSelectedItem(item)}
-                                />
-                            </div>
-                        ))}
-                    </div>
-                )}
-
-                {/* Past Orders Banner */}
-                {pastOrders.length > 0 && (
-                    <div className="mx-6 mt-4 mb-2 p-4 rounded-xl shadow-sm border border-orange-100 flex items-center justify-between animate-fade-in"
-                        style={{ backgroundColor: '#FFF8E1' }}>
-                        <div className="flex flex-col">
-                            <span className="font-bold text-orange-800 flex items-center gap-2">
-                                <span className="text-xl">👋</span> Welcome Back!
-                            </span>
-                            <span className="text-xs text-orange-600 mt-1">You have ordered here before.</span>
+                    {filteredItems.length === 0 ? (
+                        <div className="h-64 flex flex-col items-center justify-center text-center opacity-40">
+                            <Utensils size={48} className="mb-4" style={{ color: THEME.textMuted }} />
+                            <p className="font-light" style={{ color: THEME.textMuted }}>Our chefs are resting.<br />Try different filters.</p>
                         </div>
-                        <button
-                            onClick={() => {
-                                setOrdersModalTab('past');
-                                setIsOrdersOpen(true);
-                            }}
-                            className="px-4 py-2 bg-white text-orange-700 text-sm font-bold rounded-lg shadow-sm border border-orange-200 hover:bg-orange-50 active:scale-95 transition-all flex items-center gap-2"
-                        >
-                            <History size={16} />
-                            View History
-                        </button>
-                    </div>
-                )}
+                    ) : (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+                            {filteredItems.map((item, index) => (
+                                <div key={item.id} className="animate-fade-in-up h-full" style={{ animationDelay: `${index * 50}ms` }}>
+                                    <MenuItemCard
+                                        item={item}
+                                        onClick={() => setSelectedItem(item)}
+                                    />
+                                </div>
+                            ))}
+                        </div>
+                    )}
+
+                    {/* Past Orders Banner */}
+                    {pastOrders.length > 0 && (
+                        <div className="mx-6 mt-4 mb-2 p-4 rounded-xl shadow-sm border border-orange-100 flex items-center justify-between animate-fade-in"
+                            style={{ backgroundColor: '#FFF8E1' }}>
+                            <div className="flex flex-col">
+                                <span className="font-bold text-orange-800 flex items-center gap-2">
+                                    <span className="text-xl">👋</span> Welcome Back!
+                                </span>
+                                <span className="text-xs text-orange-600 mt-1">You have ordered here before.</span>
+                            </div>
+                            <button
+                                onClick={() => {
+                                    setOrdersModalTab('past');
+                                    setIsOrdersOpen(true);
+                                }}
+                                className="px-4 py-2 bg-white text-orange-700 text-sm font-bold rounded-lg shadow-sm border border-orange-200 hover:bg-orange-50 active:scale-95 transition-all flex items-center gap-2"
+                            >
+                                <History size={16} />
+                                View History
+                            </button>
+                        </div>
+                    )}
+                </div>
             </main>
 
             {/* Floating Cart Button */}

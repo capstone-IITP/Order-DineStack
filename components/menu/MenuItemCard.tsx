@@ -78,40 +78,40 @@ export default function MenuItemCard({ item, onClick }: MenuItemCardProps) {
     return (
         <div
             onClick={onClick}
-            className={`group relative bg-white rounded-[2rem] p-5 shadow-sm border border-gray-100/50 transition-all duration-300 ${item.isAvailable ? 'cursor-pointer hover:shadow-md' : 'opacity-60 grayscale cursor-not-allowed'}`}
+            className={`group relative bg-white rounded-[1.5rem] sm:rounded-[2rem] p-4 sm:p-5 shadow-sm border border-gray-100/50 transition-all duration-300 ${item.isAvailable ? 'cursor-pointer hover:shadow-md' : 'opacity-60 grayscale cursor-not-allowed'}`}
         >
-            <div className="flex justify-between items-start gap-4">
+            <div className="flex justify-between items-start gap-3 sm:gap-4">
                 {/* Left Content */}
-                <div className="flex-1 space-y-2">
+                <div className="flex-1 space-y-1.5 sm:space-y-2">
                     {/* Category & Veg/Non-Veg */}
-                    <div className="flex items-center gap-2 mb-1">
+                    <div className="flex items-center gap-1.5 sm:gap-2 mb-0.5 sm:mb-1">
                         {item.isVegetarian ? (
-                            <div className="w-4 h-4 rounded-[4px] border border-green-600 flex items-center justify-center">
-                                <div className="w-2 h-2 rounded-full bg-green-600"></div>
+                            <div className="w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-[4px] border border-green-600 flex items-center justify-center">
+                                <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-green-600"></div>
                             </div>
                         ) : (
-                            <div className="w-4 h-4 rounded-[4px] border border-red-600 flex items-center justify-center">
-                                <div className="w-2 h-2 rounded-full bg-red-600"></div>
+                            <div className="w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-[4px] border border-red-600 flex items-center justify-center">
+                                <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-red-600"></div>
                             </div>
                         )}
-                        <span className="text-[11px] font-bold text-gray-500 tracking-widest uppercase">
+                        <span className="text-[10px] sm:text-[11px] font-bold text-gray-500 tracking-widest uppercase">
                             {item.category || 'SPECIAL'}
                         </span>
                     </div>
 
                     {/* Title */}
-                    <h3 className="font-serif-custom text-[1.1rem] font-bold text-gray-900 leading-tight">
+                    <h3 className="font-serif-custom text-base sm:text-[1.1rem] font-bold text-gray-900 leading-tight">
                         {item.name}
                     </h3>
 
                     {/* Description */}
-                    <p className="text-[0.8rem] text-gray-500 leading-relaxed line-clamp-2">
+                    <p className="text-xs sm:text-[0.8rem] text-gray-500 leading-relaxed line-clamp-2">
                         {item.description}
                     </p>
 
                     {/* Price */}
-                    <div className="pt-2">
-                        <span className="text-lg font-bold text-[#8D0B41]">
+                    <div className="pt-1.5 sm:pt-2">
+                        <span className="text-base sm:text-lg font-bold text-[#8D0B41]">
                             ₹{item.price.toFixed(2)}
                         </span>
                     </div>

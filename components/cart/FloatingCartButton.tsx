@@ -23,7 +23,7 @@ export default function FloatingCartButton() {
     return (
         <button
             onClick={openCart}
-            className={`fixed bottom-8 right-6 z-50 bg-[#8D0B41] text-white p-4 rounded-full shadow-lg shadow-[#8D0B41]/40 flex items-center justify-center transition-all duration-300 hover:scale-105 active:scale-95 ${bump ? 'scale-110' : ''}`}
+            className={`fixed bottom-6 right-4 sm:bottom-8 sm:right-8 z-50 bg-[#8D0B41] text-white p-4 rounded-full shadow-lg shadow-[#8D0B41]/40 flex items-center justify-center transition-all duration-300 hover:scale-105 active:scale-95 ${bump ? 'scale-110' : ''}`}
             aria-label="View Cart"
         >
             <div className="relative">
