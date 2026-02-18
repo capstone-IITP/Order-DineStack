@@ -6,9 +6,8 @@ import { Html5Qrcode } from 'html5-qrcode';
 import { Utensils, Loader2, Check, Lock, ScanLine, Camera, WifiOff, X, User, Phone, CheckCircle2, AlertCircle, ChevronRight } from 'lucide-react';
 
 // New Imports
-import { CartProvider } from '@/contexts/CartContext';
-import CartDrawer from '@/components/cart/CartDrawer';
-import FloatingCartButton from '@/components/cart/FloatingCartButton';
+// CartProvider removed from here as it is now in layout.tsx
+// CartDrawer & FloatingCartButton removed (in layout.tsx)
 import MenuList from '@/components/menu/MenuList';
 import ItemDetailModal from '@/components/menu/ItemDetailModal';
 
@@ -18,7 +17,6 @@ import { MenuItem } from '@/types';
 
 // --- Configuration ---
 const IS_RESTAURANT_OPEN = true;
-const SIMULATE_NETWORK_ERROR = false;
 
 // --- Types ---
 interface Session {
@@ -33,9 +31,6 @@ const isValidIdentity = () => {
   const phone = localStorage.getItem('dinestack_customer_phone');
   return !!(name && name.trim().length >= 2 && phone && /^\d{10}$/.test(phone.trim()));
 };
-
-// --- Components (Inline Onboarding) ---
-// Kept inline to avoid too many small files, but "Menu" components are now external.
 
 const ClosedView = () => (
   <div className="flex-1 flex flex-col justify-center items-center w-full max-w-md mx-auto h-full p-6 animate-fade-in text-center bg-white/50 backdrop-blur-sm">
@@ -439,64 +434,60 @@ function MainContent() {
     <div className="flex flex-col h-[100dvh] bg-gradient-to-br from-[#f8f9fa] to-[#e9ecef] overflow-hidden text-[#111111] font-sans">
       <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-[0.03] pointer-events-none"></div>
 
-      <CartProvider>
-        {mode === 'landing' && (
-          <LandingView onComplete={() => session ? setMode('confirm') : setMode('scanning')} />
-        )}
+      {mode === 'landing' && (
+        <LandingView onComplete={() => session ? setMode('confirm') : setMode('scanning')} />
+      )}
 
-        {mode === 'scanning' && (
-          <ScanQRView onScanSuccess={handleScanSuccess} onCancel={() => setMode('landing')} />
-        )}
+      {mode === 'scanning' && (
+        <ScanQRView onScanSuccess={handleScanSuccess} onCancel={() => setMode('landing')} />
+      )}
 
-        {mode === 'confirm' && (
-          <ConfirmationView
-            session={session}
-            onConfirm={handleConfirmTable}
-            onCancel={() => { setSession(null); setMode('scanning'); }}
-            onResetIdentity={handleResetIdentity}
-          />
-        )}
+      {mode === 'confirm' && (
+        <ConfirmationView
+          session={session}
+          onConfirm={handleConfirmTable}
+          onCancel={() => { setSession(null); setMode('scanning'); }}
+          onResetIdentity={handleResetIdentity}
+        />
+      )}
 
-        {mode === 'identity' && (
-          <CustomerIdentityView onComplete={handleIdentityComplete} />
-        )}
+      {mode === 'identity' && (
+        <CustomerIdentityView onComplete={handleIdentityComplete} />
+      )}
 
-        {mode === 'menu' && (
-          <div className="flex-1 flex flex-col h-full overflow-hidden animate-fade-in relative">
-            {/* Header */}
-            <header className="bg-white/80 backdrop-blur-md px-6 py-4 flex justify-between items-center sticky top-0 z-40 border-b border-gray-100">
-              <div>
-                <h1 className="text-xl font-serif-custom font-bold text-[#5A0528]">Lumière Bistro</h1>
-                <p className="text-xs text-gray-500 font-medium">Table {session?.tableId}</p>
-              </div>
-              <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
-                <User className="w-4 h-4 text-gray-600" />
-              </div>
-            </header>
-
-            {/* Scrollable Content */}
-            <div className="flex-1 overflow-y-auto px-4 pb-20">
-              <MenuList
-                categories={CATEGORIES}
-                items={MENU_DATA}
-                onItemClick={setSelectedItem}
-              />
+      {mode === 'menu' && (
+        <div className="flex-1 flex flex-col h-full overflow-hidden animate-fade-in relative">
+          {/* Header */}
+          <header className="bg-white/80 backdrop-blur-md px-6 py-4 flex justify-between items-center sticky top-0 z-40 border-b border-gray-100">
+            <div>
+              <h1 className="text-xl font-serif-custom font-bold text-[#5A0528]">Lumière Bistro</h1>
+              <p className="text-xs text-gray-500 font-medium">Table {session?.tableId}</p>
             </div>
+            <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
+              <User className="w-4 h-4 text-gray-600" />
+            </div>
+          </header>
 
-            {/* Cart UI */}
-            <FloatingCartButton />
-            <CartDrawer />
-
-            {/* Item Modal */}
-            {selectedItem && (
-              <ItemDetailModal
-                item={selectedItem}
-                onClose={() => setSelectedItem(null)}
-              />
-            )}
+          {/* Scrollable Content */}
+          <div className="flex-1 overflow-y-auto px-4 pb-20">
+            <MenuList
+              categories={CATEGORIES}
+              items={MENU_DATA}
+              onItemClick={setSelectedItem}
+            />
           </div>
-        )}
-      </CartProvider>
+
+          {/* Cart UI - now in layout.tsx */}
+
+          {/* Item Modal */}
+          {selectedItem && (
+            <ItemDetailModal
+              item={selectedItem}
+              onClose={() => setSelectedItem(null)}
+            />
+          )}
+        </div>
+      )}
     </div>
   );
 }
