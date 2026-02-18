@@ -77,37 +77,28 @@ export default function CartDrawer() {
 
 
                                             <div className="flex-1 flex flex-col justify-between">
-                                                <div className="flex justify-between items-start">
-                                                    <div>
-                                                        <div className="flex items-center gap-2 mb-1">
-                                                            {item.isVegetarian ? (
-                                                                <span className="shrink-0 flex items-center justify-center w-3.5 h-3.5 rounded-[3px] border border-green-600 relative">
-                                                                    <span className="w-1.5 h-1.5 rounded-full bg-green-600"></span>
-                                                                </span>
-                                                            ) : (
-                                                                <span className="shrink-0 flex items-center justify-center w-3.5 h-3.5 rounded-[3px] border border-red-600 relative">
-                                                                    <span className="w-1.5 h-1.5 rounded-full bg-red-600"></span>
-                                                                </span>
-                                                            )}
-                                                            <h4 className="font-bold text-[#8D0B41] line-clamp-1 text-base">{item.name}</h4>
-                                                        </div>
-                                                        <p className="text-xs text-gray-500 line-clamp-1 pl-6">
-                                                            {Object.values(item.selectedOptions).flat().map(o => o.name).join(', ')}
-                                                        </p>
-                                                        <div className="font-bold text-gray-900 mt-2 pl-6">₹{(item.finalPrice * item.quantity).toFixed(0)}</div>
-                                                    </div>
+                                                <div>
+                                                    <h4 className="font-bold text-gray-900 line-clamp-1">{item.name}</h4>
+                                                    <p className="text-xs text-gray-500 line-clamp-1">
+                                                        {/* Show options mock */}
+                                                        {Object.values(item.selectedOptions).flat().map(o => o.name).join(', ')}
+                                                    </p>
+                                                </div>
 
-                                                    <div className="flex items-center bg-[#8D0B41] rounded-full px-1 py-1 shadow-sm shrink-0">
+                                                <div className="flex items-center justify-between mt-2">
+                                                    <div className="font-bold text-[#8D0B41]">₹{(item.finalPrice * item.quantity).toFixed(2)}</div>
+
+                                                    <div className="flex items-center bg-gray-50 rounded-lg border border-gray-200">
                                                         <button
                                                             onClick={() => item.quantity > 1 ? updateQuantity(item.id, -1) : removeFromCart(item.id)}
-                                                            className="w-7 h-7 flex items-center justify-center text-white hover:bg-black/10 rounded-full transition-colors"
+                                                            className="w-8 h-8 flex items-center justify-center text-gray-600 hover:bg-gray-100 rounded-l-lg transition-colors"
                                                         >
-                                                            <Minus className="w-3.5 h-3.5" />
+                                                            {item.quantity === 1 ? <Trash2 className="w-3.5 h-3.5 text-red-400" /> : <Minus className="w-3.5 h-3.5" />}
                                                         </button>
-                                                        <span className="w-6 text-center text-sm font-bold text-white">{item.quantity}</span>
+                                                        <span className="w-8 text-center text-sm font-bold">{item.quantity}</span>
                                                         <button
                                                             onClick={() => updateQuantity(item.id, 1)}
-                                                            className="w-7 h-7 flex items-center justify-center text-white hover:bg-black/10 rounded-full transition-colors"
+                                                            className="w-8 h-8 flex items-center justify-center text-gray-600 hover:bg-gray-100 rounded-r-lg transition-colors"
                                                         >
                                                             <Plus className="w-3.5 h-3.5" />
                                                         </button>
