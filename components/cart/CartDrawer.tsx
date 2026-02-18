@@ -63,6 +63,7 @@ export default function CartDrawer() {
     const [instructions, setInstructions] = useState("");
 
     const [isClosing, setIsClosing] = useState(false);
+    const [showClearCartConfirm, setShowClearCartConfirm] = useState(false);
 
     // Calculate billing details for display (Frontend only simulation as per user design)
     const subtotal = cartTotal;
@@ -77,12 +78,18 @@ export default function CartDrawer() {
             setIsClosing(false);
             setView('cart'); // Reset view after closing animation
             setLastOrderId(null);
+            setShowClearCartConfirm(false);
         }, 300);
     };
 
     const handleCheckoutSuccess = (orderId: string) => {
         setLastOrderId(orderId);
         setView('success');
+    };
+
+    const handleClearCart = () => {
+        clearCart();
+        setShowClearCartConfirm(false);
     };
 
     if (!isCartOpen) return null;
@@ -116,7 +123,7 @@ export default function CartDrawer() {
 
                             {cartItems.length > 0 && (
                                 <button
-                                    onClick={() => { if (confirm("Clear cart?")) clearCart(); }}
+                                    onClick={() => setShowClearCartConfirm(true)}
                                     className="px-3 py-1.5 bg-white/10 backdrop-blur-md rounded-full text-xs font-bold text-white border border-white/10 hover:bg-white/20 transition-all flex items-center gap-1"
                                 >
                                     <Trash2 size={12} /> Clear Cart
@@ -222,7 +229,7 @@ export default function CartDrawer() {
                                         <input
                                             type="text"
                                             placeholder="e.g., Less spicy, allergy info..."
-                                            className="w-full bg-white border border-stone-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-[#8D0B41] focus:ring-1 focus:ring-[#8D0B41] transition-all"
+                                            className="w-full bg-white border border-stone-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-[#8D0B41] focus:ring-1 focus:ring-[#8D0B41] transition-all placeholder-stone-400"
                                             value={instructions}
                                             onChange={(e) => setInstructions(e.target.value)}
                                         />
@@ -314,6 +321,36 @@ export default function CartDrawer() {
                                     <ChevronRight size={18} className="text-white group-hover:translate-x-1 transition-transform" />
                                 </div>
                             </button>
+                        </div>
+                    </div>
+                )}
+
+                {/* --- Clear Cart Confirmation Modal --- */}
+                {showClearCartConfirm && (
+                    <div className="absolute inset-0 z-[60] flex items-center justify-center p-4">
+                        <div className="absolute inset-0 bg-black/20 backdrop-blur-[2px] animate-fade-in" onClick={() => setShowClearCartConfirm(false)}></div>
+                        <div className="bg-white rounded-2xl shadow-xl w-full max-w-xs p-6 relative z-10 animate-scale-in">
+                            <div className="w-12 h-12 bg-red-50 rounded-full flex items-center justify-center mb-4 mx-auto">
+                                <Trash2 className="text-[#8D0B41] w-6 h-6" />
+                            </div>
+                            <h3 className="text-lg font-bold text-center text-[#111] mb-2">Clear Cart?</h3>
+                            <p className="text-center text-stone-500 text-sm mb-6">
+                                Are you sure you want to remove all items from your cart? This action cannot be undone.
+                            </p>
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={() => setShowClearCartConfirm(false)}
+                                    className="flex-1 py-2.5 rounded-xl font-bold text-stone-600 bg-stone-100 hover:bg-stone-200 transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={handleClearCart}
+                                    className="flex-1 py-2.5 rounded-xl font-bold text-white bg-[#8D0B41] hover:bg-[#8D0B41]/90 shadow-lg shadow-[#8D0B41]/20 transition-colors"
+                                >
+                                    Clear
+                                </button>
+                            </div>
                         </div>
                     </div>
                 )}
