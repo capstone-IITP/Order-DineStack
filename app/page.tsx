@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Html5Qrcode } from 'html5-qrcode';
 import { Utensils, Loader2, Check, Lock, ScanLine, Camera, WifiOff, X, User, Phone, CheckCircle2, AlertCircle, ChevronRight } from 'lucide-react';
@@ -380,7 +380,7 @@ const CustomerIdentityView = ({ onComplete }: { onComplete: () => void }) => {
   );
 };
 
-export default function Home() {
+function MainContent() {
   const searchParams = useSearchParams();
   const [mode, setMode] = useState<'landing' | 'scanning' | 'confirm' | 'identity' | 'menu'>('landing');
   const [session, setSession] = useState<Session | null>(null);
@@ -498,5 +498,17 @@ export default function Home() {
         )}
       </CartProvider>
     </div>
+  );
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center h-screen bg-[#f8f9fa]">
+        <Loader2 className="w-10 h-10 animate-spin text-[#8D0B41]" />
+      </div>
+    }>
+      <MainContent />
+    </Suspense>
   );
 }
