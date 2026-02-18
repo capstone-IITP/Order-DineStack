@@ -41,7 +41,8 @@ export default function CheckoutView({ onBack, onSuccess }: CheckoutViewProps) {
             }));
 
             // Call API
-            const result = await placeOrder(items, cartTotal);
+            const deviceToken = localStorage.getItem('dinestack_device_token');
+            const result = await placeOrder(items, cartTotal, undefined, deviceToken || undefined);
 
             if (result.success) {
                 clearCart();
