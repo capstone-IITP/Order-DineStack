@@ -14,8 +14,10 @@ interface OrdersModalProps {
 }
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
+    'RECEIVED': { label: 'Received', color: '#B45309', bg: '#FFFBEB' },
     'PENDING': { label: 'Pending', color: '#B45309', bg: '#FFFBEB' },
     'PREPARING': { label: 'Preparing', color: '#15803D', bg: '#F0FDF4' },
+    'READY': { label: 'Ready', color: '#15803D', bg: '#F0FDF4' },
     'SERVED': { label: 'Served', color: '#1D4ED8', bg: '#EFF6FF' },
     'COMPLETED': { label: 'Completed', color: '#374151', bg: '#F3F4F6' },
     'CANCELLED': { label: 'Cancelled', color: '#991B1B', bg: '#FEF2F2' },
@@ -36,15 +38,21 @@ export default function OrdersModal({ isOpen, onClose, restaurantId, phone, devi
 
     const fetchOrders = async () => {
         if (!restaurantId) return;
-        if (!phone && !deviceToken) return;
+        // Proceed even if phone is missing, as we might rely on deviceToken
+        if (!deviceToken && !phone) return;
 
         setLoading(true);
         setError(null);
 
         try {
             const promises = [];
-            if (phone) promises.push(getCustomerOrders(restaurantId, phone));
-            if (deviceToken) promises.push(getPastOrders(deviceToken));
+            // Only fetch by phone if it exists and looks valid, keeping consistent type
+            if (phone && phone.length >= 10) promises.push(
+                getCustomerOrders(restaurantId, phone).catch(() => [] as CustomerOrder[])
+            );
+            if (deviceToken) promises.push(
+                getPastOrders(deviceToken).catch(() => [] as CustomerOrder[])
+            );
 
             const results = await Promise.all(promises);
             // Merge and deduplicate by ID
@@ -54,8 +62,11 @@ export default function OrdersModal({ isOpen, onClose, restaurantId, phone, devi
             setOrders(uniqueOrders);
         } catch (err: any) {
             console.error("Failed to load orders", err);
-            const msg = err.response?.data?.error || err.message || "Failed to load your orders.";
-            setError(msg);
+            // Don't show error if we just failed to fetch one source but have data
+            if (orders.length === 0) {
+                const msg = err.response?.data?.error || err.message || "Failed to load your orders.";
+                setError(msg);
+            }
         } finally {
             setLoading(false);
         }
@@ -64,7 +75,7 @@ export default function OrdersModal({ isOpen, onClose, restaurantId, phone, devi
     useEffect(() => {
         let intervalId: NodeJS.Timeout;
 
-        if (isOpen && (phone || deviceToken)) {
+        if (isOpen) {
             // Initial fetch
             fetchOrders();
 
@@ -74,8 +85,12 @@ export default function OrdersModal({ isOpen, onClose, restaurantId, phone, devi
 
                 try {
                     const promises = [];
-                    if (phone) promises.push(getCustomerOrders(restaurantId, phone));
-                    if (deviceToken) promises.push(getPastOrders(deviceToken));
+                    if (phone && phone.length >= 10) promises.push(
+                        getCustomerOrders(restaurantId, phone).catch(() => [])
+                    );
+                    if (deviceToken) promises.push(
+                        getPastOrders(deviceToken).catch(() => [])
+                    );
 
                     const results = await Promise.all(promises);
                     const allOrders = results.flat();
@@ -90,7 +105,7 @@ export default function OrdersModal({ isOpen, onClose, restaurantId, phone, devi
         return () => {
             if (intervalId) clearInterval(intervalId);
         };
-    }, [isOpen, restaurantId, phone]);
+    }, [isOpen, restaurantId, phone, deviceToken]);
 
     if (!isOpen) return null;
 
@@ -183,48 +198,81 @@ export default function OrdersModal({ isOpen, onClose, restaurantId, phone, devi
                     ) : (
                         filteredOrders.map(order => {
                             const status = STATUS_CONFIG[order.status] || STATUS_CONFIG['PENDING'];
+                            const orderDate = new Date(order.createdAt);
+                            const formattedDate = orderDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+                            const formattedTime = orderDate.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+
+                            // Safe total amount calculation
+                            const totalAmount = typeof order.totalAmount === 'number' && !isNaN(order.totalAmount)
+                                ? order.totalAmount
+                                : 0;
+
                             return (
                                 <div
                                     key={order.id}
                                     className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 animate-fade-in-up"
                                 >
+                                    {/* Top Row: Date, Status, Amount */}
                                     <div className="flex justify-between items-start mb-3">
-                                        <div>
-                                            <div className="flex items-center gap-2 mb-1">
-                                                <span className="text-xs font-bold px-2 py-0.5 rounded-md" style={{ backgroundColor: status.bg, color: status.color }}>
+                                        <div className="flex flex-col gap-1">
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide" style={{ backgroundColor: status.bg, color: status.color }}>
                                                     {status.label}
                                                 </span>
                                                 <span className="text-xs text-gray-400 flex items-center gap-1">
-                                                    <Clock size={10} />
-                                                    {new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                    {formattedDate} • {formattedTime}
                                                 </span>
                                             </div>
-                                            <h4 className="font-bold text-sm" style={{ color: theme.text }}>Order #{order.orderNumber}</h4>
-                                        </div>
-                                        <div className="text-right">
-                                            <span className="block font-bold" style={{ color: theme.primary }}>₹{order.totalAmount}</span>
-                                            <span className="text-xs text-gray-400">{order.items.length} Items</span>
+                                            {/* Order ID Fallback: #1234 from UUID if orderNumber missing */}
+                                            <h4 className="font-bold text-sm text-gray-800">
+                                                Order #{order.orderNumber || order.id.slice(0, 5).toUpperCase()}
+                                            </h4>
                                         </div>
                                     </div>
 
+                                    <div className="h-px bg-gray-50 my-3"></div>
+
+                                    {/* Items List */}
                                     <div className="space-y-2 mb-3">
-                                        {order.items.map(item => (
-                                            <div key={item.id} className="flex justify-between text-sm">
-                                                <span className="text-gray-600 truncate max-w-[70%]">
-                                                    <span className="font-bold text-gray-800">{item.quantity}x</span> {item.name}
-                                                </span>
-                                                <span className="text-gray-500">₹{item.price * item.quantity}</span>
-                                            </div>
-                                        ))}
+                                        {/* Defensive check for items array */}
+                                        {Array.isArray(order.items) && order.items.map(item => {
+                                            const itemName = item.menuItem?.name || item.name || 'Unknown Item';
+                                            // Handle price: prefer item price (snapshot), fallback to current menu price
+                                            const itemPrice = item.price || item.menuItem?.price || 0;
+
+                                            return (
+                                                <div key={item.id} className="flex justify-between text-sm items-start">
+                                                    <span className="text-gray-700 font-medium">
+                                                        <span className="font-bold text-gray-900 mr-2">{item.quantity}x</span>
+                                                        {itemName}
+                                                    </span>
+                                                    {/* Only show price if > 0 to avoid clutter/confusion if data missing */}
+                                                    {itemPrice > 0 && (
+                                                        <span className="text-gray-500">₹{(itemPrice * item.quantity).toFixed(2)}</span>
+                                                    )}
+                                                </div>
+                                            );
+                                        })}
+                                        {(!order.items || order.items.length === 0) && (
+                                            <p className="text-xs text-gray-400 italic">No items details available</p>
+                                        )}
                                     </div>
 
-                                    <div className="pt-3 border-t border-dashed border-gray-200 flex justify-between items-center text-xs text-gray-400">
-                                        <span>Total Paid</span>
-                                        {order.status === 'SERVED' && (
-                                            <span className="flex items-center gap-1 text-green-600 font-bold">
-                                                <CheckCircle2 size={12} /> Served
+                                    <div className="h-px bg-gray-100 my-3"></div>
+
+                                    {/* Total Paid Footer */}
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-xs text-gray-500 font-medium">Total Paid</span>
+                                        <div className="flex flex-col items-end">
+                                            <span className="text-lg font-bold" style={{ color: theme.primary }}>
+                                                ₹{totalAmount.toFixed(2)}
                                             </span>
-                                        )}
+                                            {order.status === 'SERVED' && (
+                                                <span className="flex items-center gap-1 text-green-600 text-[10px] font-bold uppercase tracking-wider">
+                                                    <CheckCircle2 size={10} /> Served
+                                                </span>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
                             );

@@ -262,16 +262,21 @@ export const getTableInfo = async (tableId: string): Promise<TableInfoResponse> 
 
 export interface OrderItem {
     id: string;
-    name?: string; // Optional if not returned directly
     quantity: number;
-    price: number;
-    menuItem?: MenuItem;
+    price: number; // Keep for backward compatibility if backend provides it
+    menuItem?: {
+        name: string;
+        price: number;
+        image?: string;
+        description?: string;
+    };
+    name?: string; // Fallback
 }
 
 export interface CustomerOrder {
     id: string;
-    orderNumber: string;
-    status: 'PENDING' | 'PREPARING' | 'SERVED' | 'COMPLETED' | 'CANCELLED';
+    orderNumber?: string; // Optional as backend might not return it
+    status: 'PENDING' | 'RECEIVED' | 'PREPARING' | 'READY' | 'SERVED' | 'COMPLETED' | 'CANCELLED';
     totalAmount: number;
     createdAt: string;
     items: OrderItem[];
