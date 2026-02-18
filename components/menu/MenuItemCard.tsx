@@ -78,71 +78,85 @@ export default function MenuItemCard({ item, onClick }: MenuItemCardProps) {
     return (
         <div
             onClick={onClick}
-            className={`group relative bg-white rounded-3xl p-5 shadow-sm border border-gray-100/50 transition-all duration-300 ${item.isAvailable ? 'cursor-pointer hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] hover:-translate-y-1' : 'opacity-60 grayscale cursor-not-allowed'}`}
+            className={`group relative bg-white rounded-[2rem] p-5 shadow-sm border border-gray-100/50 transition-all duration-300 ${item.isAvailable ? 'cursor-pointer hover:shadow-md' : 'opacity-60 grayscale cursor-not-allowed'}`}
         >
             <div className="flex justify-between items-start gap-4">
+                {/* Left Content */}
                 <div className="flex-1 space-y-2">
-                    <div className="flex items-center gap-2">
+                    {/* Category & Veg/Non-Veg */}
+                    <div className="flex items-center gap-2 mb-1">
                         {item.isVegetarian ? (
-                            <span className="shrink-0 flex items-center justify-center w-4 h-4 rounded-[4px] border border-green-600 top-0.5 relative">
-                                <span className="w-2 h-2 rounded-full bg-green-600"></span>
-                            </span>
+                            <div className="w-4 h-4 rounded-[4px] border border-green-600 flex items-center justify-center">
+                                <div className="w-2 h-2 rounded-full bg-green-600"></div>
+                            </div>
                         ) : (
-                            <span className="shrink-0 flex items-center justify-center w-4 h-4 rounded-[4px] border border-red-600 top-0.5 relative">
-                                <span className="w-2 h-2 rounded-full bg-red-600"></span>
-                            </span>
+                            <div className="w-4 h-4 rounded-[4px] border border-red-600 flex items-center justify-center">
+                                <div className="w-2 h-2 rounded-full bg-red-600"></div>
+                            </div>
                         )}
-                        <h4 className="font-serif-custom text-lg font-bold text-gray-900 leading-tight group-hover:text-[#8D0B41] transition-colors">{item.name}</h4>
+                        <span className="text-[11px] font-bold text-gray-500 tracking-widest uppercase">
+                            {item.category || 'SPECIAL'}
+                        </span>
                     </div>
 
-                    <p className="text-sm text-gray-600 leading-relaxed line-clamp-2">{item.description}</p>
+                    {/* Title */}
+                    <h3 className="font-serif-custom text-[1.1rem] font-bold text-gray-900 leading-tight">
+                        {item.name}
+                    </h3>
 
-                    <div className="flex items-center gap-3 pt-2">
-                        <span className="font-semibold text-lg text-gray-900">₹{item.price}</span>
-                        {item.isPopular && (
-                            <span className="px-2 py-0.5 bg-yellow-100 text-yellow-700 text-[10px] font-bold uppercase tracking-wider rounded-lg flex items-center gap-1">
-                                <Star className="w-3 h-3 fill-current" /> Popular
-                            </span>
-                        )}
-                        {item.isSpicy && (
-                            <span className="px-2 py-0.5 bg-red-50 text-red-600 text-[10px] font-bold uppercase tracking-wider rounded-lg">Spicy</span>
-                        )}
+                    {/* Description */}
+                    <p className="text-[0.8rem] text-gray-500 leading-relaxed line-clamp-2">
+                        {item.description}
+                    </p>
+
+                    {/* Price */}
+                    <div className="pt-2">
+                        <span className="text-lg font-bold text-[#8D0B41]">
+                            ₹{item.price.toFixed(2)}
+                        </span>
                     </div>
                 </div>
 
-                <div className="relative shrink-0 flex flex-col items-end gap-2">
-                    {/* Add Button or Stepper */}
-                    {showStepper && targetCartItem ? (
-                        <div className="flex items-center bg-[#8D0B41] rounded-full shadow-md text-white h-10 animate-fade-in" onClick={(e) => e.stopPropagation()}>
-                            <button onClick={handleDecrement} className="w-8 h-full flex items-center justify-center hover:bg-black/10 rounded-l-full transition-colors">
-                                <Minus className="w-4 h-4" />
+                {/* Right Content: Vertical Stepper or Add Button */}
+                <div className="relative shrink-0 flex flex-col items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                    {(showStepper && targetCartItem) ? (
+                        <div className="flex flex-col items-center gap-1 bg-white rounded-full shadow-sm p-1 border border-gray-100">
+                            {/* Plus Button (Top) */}
+                            <button
+                                onClick={handleIncrement}
+                                className="w-8 h-8 flex items-center justify-center bg-[#8D0B41] text-white rounded-full shadow-sm active:scale-90 transition-transform"
+                            >
+                                <Plus className="w-4 h-4" strokeWidth={2.5} />
                             </button>
-                            <span className="w-6 text-center text-sm font-bold flex justify-center">{/* Show total quantity for this item type, or just this instance? For simple items, it's total. For complex, if we show stepper, it's that instance's qty. */}{hasRequiredOptions ? targetCartItem.quantity : totalQuantity}</span>
-                            <button onClick={handleIncrement} className="w-8 h-full flex items-center justify-center hover:bg-black/10 rounded-r-full transition-colors">
-                                <Plus className="w-4 h-4" />
+
+                            {/* Quantity */}
+                            <span className="text-sm font-bold text-gray-900 w-8 text-center py-1">
+                                {hasRequiredOptions ? (targetCartItem?.quantity || 0) : totalQuantity}
+                            </span>
+
+                            {/* Minus Button (Bottom) */}
+                            <button
+                                onClick={handleDecrement}
+                                className="w-8 h-8 flex items-center justify-center bg-white border border-gray-200 text-gray-600 rounded-full shadow-sm hover:bg-gray-50 active:scale-90 transition-transform"
+                            >
+                                <Minus className="w-4 h-4" strokeWidth={2.5} />
                             </button>
                         </div>
                     ) : (
-                        <button
-                            disabled={!item.isAvailable}
-                            onClick={handleAddClick}
-                            className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 shadow-sm ${item.isAvailable
-                                ? 'bg-gray-50 text-[#8D0B41] hover:bg-[#8D0B41] hover:text-white hover:shadow-md hover:scale-110'
-                                : 'bg-gray-100 text-gray-300'
-                                }`}
-                        >
-                            <Plus className="w-5 h-5" />
-                        </button>
-                    )}
-
-                    {/* Badge for multiple variants (Conflict state) */}
-                    {/* If we have multiple variants of a complex item, we DO NOT show stepper (ambiguous), so we show Add button + Badge */}
-                    {totalQuantity > 0 && !showStepper && (
-                        <div className="bg-[#8D0B41] text-white text-[10px] font-bold px-2 py-1 rounded-full shadow-sm animate-scale-in">
-                            {totalQuantity} in cart
+                        <div className="flex flex-col items-center gap-4 py-2">
+                            {/* Placeholder for alignment to match stepper height if needed, or just the Add button */}
+                            <button
+                                disabled={!item.isAvailable}
+                                onClick={handleAddClick}
+                                className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 shadow-sm ${item.isAvailable
+                                    ? 'bg-white border border-gray-200 text-[#8D0B41] hover:bg-[#8D0B41] hover:text-white hover:shadow-md'
+                                    : 'bg-gray-100 text-gray-300'
+                                    }`}
+                            >
+                                <Plus className="w-6 h-6" />
+                            </button>
                         </div>
                     )}
-
                 </div>
             </div>
         </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
-import { ShoppingBag, ChevronRight } from 'lucide-react';
+import { ShoppingBag } from 'lucide-react';
 import { useCart } from '../../contexts/CartContext';
 
 export default function FloatingCartButton() {
