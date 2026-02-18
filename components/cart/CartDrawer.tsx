@@ -74,16 +74,7 @@ export default function CartDrawer() {
                                     {cartItems.map((item) => (
                                         <div key={item.id} className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex gap-4 animate-fade-in-up">
                                             {/* Image Placeholder or Actual Image */}
-                                            <div className="w-20 h-20 bg-gray-100 rounded-xl shrink-0 overflow-hidden">
-                                                {item.image ? (
-                                                    // eslint-disable-next-line @next/next/no-img-element
-                                                    <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
-                                                ) : (
-                                                    <div className="w-full h-full flex items-center justify-center bg-gray-200 text-gray-400">
-                                                        <ShoppingBag className="w-8 h-8 opacity-20" />
-                                                    </div>
-                                                )}
-                                            </div>
+
 
                                             <div className="flex-1 flex flex-col justify-between">
                                                 <div>
