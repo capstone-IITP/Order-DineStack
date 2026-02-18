@@ -101,7 +101,7 @@ export default function CartDrawer() {
                 {/* --- 1. NEW BIG HEADER (The "Unique" Design) --- */}
                 {/* Only Show Header in Cart View */}
                 {view === 'cart' && (
-                    <div className="bg-[#8D0B41] pt-10 pb-16 px-6 relative overflow-hidden shrink-0">
+                    <div className="bg-gradient-to-br from-[#5A0528] to-[#2b0213] pt-10 pb-16 px-6 relative overflow-hidden shrink-0">
                         {/* Background Decorative Gradient */}
                         <div className="absolute top-0 right-0 w-64 h-64 bg-[#a00d4a] rounded-full blur-3xl opacity-50 -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
 
