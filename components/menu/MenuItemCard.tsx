@@ -13,25 +13,34 @@ interface MenuItemCardProps {
 export default function MenuItemCard({ item, onClick }: MenuItemCardProps) {
     const { cartItems, addToCart, updateQuantity, removeFromCart } = useCart();
 
-    // Check if item has customization
+    // Check if item has customization groups
     const hasCustomization = item.customizationGroups && item.customizationGroups.length > 0;
 
-    // Find this item in cart (only counts simple items if no customization, or all instances)
-    // Logic: 
-    // - If customizable: "Add" always opens modal. Badge shows total count.
-    // - If simple: "Add" acts as +1. Stepper appears.
+    // Check if any customization is REQUIRED (minSelection > 0)
+    const hasRequiredOptions = item.customizationGroups?.some(g => g.minSelection > 0);
 
+    // Find this item in cart (all instances)
     const cartItemInstances = cartItems.filter(i => i.menuItemId === item.id);
     const totalQuantity = cartItemInstances.reduce((acc, i) => acc + i.quantity, 0);
 
-    // For simple items, we need the specific cartItemId to update quantity directly from card
-    const simpleCartItem = !hasCustomization && cartItemInstances.length > 0 ? cartItemInstances[0] : null;
+    // Determine if we should show the stepper.
+    // Show stepper if:
+    // 1. Item is in cart AND
+    // 2. EITHER it has no required options (treated as simple)
+    // 3. OR there is exactly one instance of it in the cart (so we know which one to inc/dec)
+    const showStepper = totalQuantity > 0 && (!hasRequiredOptions || cartItemInstances.length === 1);
 
-    const handleAddSimple = (e: React.MouseEvent) => {
+    // If we are showing the stepper, we need to know which actual cart item ID to target.
+    // If multiple instances exist (shouldn't happen for simple items, but possible for complex), 
+    // we default to the LAST added instance for simple items, or the ONLY instance for complex items.
+    const targetCartItem = cartItemInstances.length > 0 ? cartItemInstances[cartItemInstances.length - 1] : null;
+
+    const handleAddClick = (e: React.MouseEvent) => {
         e.stopPropagation();
-        if (hasCustomization) {
-            onClick();
+        if (hasRequiredOptions) {
+            onClick(); // Must open modal to select required options
         } else {
+            // Add base item directly with no options
             addToCart({
                 menuItemId: item.id,
                 name: item.name,
@@ -46,21 +55,21 @@ export default function MenuItemCard({ item, onClick }: MenuItemCardProps) {
 
     const handleIncrement = (e: React.MouseEvent) => {
         e.stopPropagation();
-        if (simpleCartItem) {
-            updateQuantity(simpleCartItem.id, 1);
+        if (targetCartItem) {
+            updateQuantity(targetCartItem.id, 1);
         } else {
-            // Should not happen if UI is correct
-            handleAddSimple(e);
+            // Fallback: Add new
+            handleAddClick(e);
         }
     };
 
     const handleDecrement = (e: React.MouseEvent) => {
         e.stopPropagation();
-        if (simpleCartItem) {
-            if (simpleCartItem.quantity === 1) {
-                removeFromCart(simpleCartItem.id);
+        if (targetCartItem) {
+            if (targetCartItem.quantity === 1) {
+                removeFromCart(targetCartItem.id);
             } else {
-                updateQuantity(simpleCartItem.id, -1);
+                updateQuantity(targetCartItem.id, -1);
             }
         }
     };
@@ -101,15 +110,13 @@ export default function MenuItemCard({ item, onClick }: MenuItemCardProps) {
                 </div>
 
                 <div className="relative shrink-0 flex flex-col items-end gap-2">
-                    {/* Image Mock if needed, or just button */}
-
                     {/* Add Button or Stepper */}
-                    {!hasCustomization && totalQuantity > 0 ? (
+                    {showStepper && targetCartItem ? (
                         <div className="flex items-center bg-[#8D0B41] rounded-full shadow-md text-white h-10 animate-fade-in" onClick={(e) => e.stopPropagation()}>
                             <button onClick={handleDecrement} className="w-8 h-full flex items-center justify-center hover:bg-black/10 rounded-l-full transition-colors">
-                                {totalQuantity === 1 ? <Minus className="w-4 h-4" /> : <Minus className="w-4 h-4" />}
+                                <Minus className="w-4 h-4" />
                             </button>
-                            <span className="w-4 text-center text-sm font-bold">{totalQuantity}</span>
+                            <span className="w-6 text-center text-sm font-bold flex justify-center">{/* Show total quantity for this item type, or just this instance? For simple items, it's total. For complex, if we show stepper, it's that instance's qty. */}{hasRequiredOptions ? targetCartItem.quantity : totalQuantity}</span>
                             <button onClick={handleIncrement} className="w-8 h-full flex items-center justify-center hover:bg-black/10 rounded-r-full transition-colors">
                                 <Plus className="w-4 h-4" />
                             </button>
@@ -117,14 +124,7 @@ export default function MenuItemCard({ item, onClick }: MenuItemCardProps) {
                     ) : (
                         <button
                             disabled={!item.isAvailable}
-                            onClick={handleAddSimple} // If customized, onClick (parent) handles it. But we stop propagation?
-                            // Actually, if customized, we want the button to just open modal.
-                            // If simple, we want it to Add. 
-                            // Let's refine: 
-                            // If available:
-                            //    Check hasCustomization. 
-                            //       Yes: Render standard "Plus" button. onClick -> calls onClick (open modal).
-                            //       No:  Render "Plus" button. onClick -> handleAddSimple (adds to cart).
+                            onClick={handleAddClick}
                             className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 shadow-sm ${item.isAvailable
                                 ? 'bg-gray-50 text-[#8D0B41] hover:bg-[#8D0B41] hover:text-white hover:shadow-md hover:scale-110'
                                 : 'bg-gray-100 text-gray-300'
@@ -134,8 +134,9 @@ export default function MenuItemCard({ item, onClick }: MenuItemCardProps) {
                         </button>
                     )}
 
-                    {/* Badge for customized items that are in cart */}
-                    {hasCustomization && totalQuantity > 0 && (
+                    {/* Badge for multiple variants (Conflict state) */}
+                    {/* If we have multiple variants of a complex item, we DO NOT show stepper (ambiguous), so we show Add button + Badge */}
+                    {totalQuantity > 0 && !showStepper && (
                         <div className="bg-[#8D0B41] text-white text-[10px] font-bold px-2 py-1 rounded-full shadow-sm animate-scale-in">
                             {totalQuantity} in cart
                         </div>
