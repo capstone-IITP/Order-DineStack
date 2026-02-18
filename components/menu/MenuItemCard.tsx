@@ -82,7 +82,7 @@ export default function MenuItemCard({ item, onClick }: MenuItemCardProps) {
             <div className="flex justify-between items-start gap-4">
                 <div className="flex-1 space-y-2">
                     <div className="flex items-center gap-2">
-                        {item.isVeg ? (
+                        {item.isVegetarian ? (
                             <span className="shrink-0 flex items-center justify-center w-4 h-4 rounded-[4px] border border-green-600 top-0.5 relative">
                                 <span className="w-2 h-2 rounded-full bg-green-600"></span>
                             </span>

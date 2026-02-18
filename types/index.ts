@@ -1,4 +1,4 @@
-export type Category = 'Starters' | 'Mains' | 'Desserts' | 'Drinks';
+export type Category = string;
 
 export interface Option {
     id: string;
@@ -21,7 +21,7 @@ export interface MenuItem {
     price: number;
     category: Category;
     image?: string;
-    isVeg: boolean;
+    isVegetarian?: boolean;
     isSpicy?: boolean;
     isPopular?: boolean;
     isAvailable: boolean;

@@ -9,7 +9,7 @@ export const MENU_DATA: MenuItem[] = [
         description: 'Creamy arborio rice with woodland mushrooms, finished with truffle oil and parmesan.',
         price: 24,
         category: 'Mains',
-        isVeg: true,
+        isVegetarian: true,
         isPopular: true,
         isAvailable: true,
         customizationGroups: [
@@ -42,7 +42,7 @@ export const MENU_DATA: MenuItem[] = [
         description: 'Jumbo scallops with cauliflower purée and crispy pancetta.',
         price: 18,
         category: 'Starters',
-        isVeg: false,
+        isVegetarian: false,
         isAvailable: true,
     },
     {
@@ -51,7 +51,7 @@ export const MENU_DATA: MenuItem[] = [
         description: 'Minced chicken stir-fried with thai basil, chili, and garlic found over jasmine rice.',
         price: 20,
         category: 'Mains',
-        isVeg: false,
+        isVegetarian: false,
         isSpicy: true,
         isAvailable: true,
         customizationGroups: [
@@ -84,7 +84,7 @@ export const MENU_DATA: MenuItem[] = [
         description: 'Warm chocolate cake with a molten center, served with vanilla bean ice cream.',
         price: 12,
         category: 'Desserts',
-        isVeg: true,
+        isVegetarian: true,
         isPopular: true,
         isAvailable: false,
     },
@@ -94,7 +94,7 @@ export const MENU_DATA: MenuItem[] = [
         description: 'Fresh burrata cheese with heirloom tomatoes, basil pesto, and balsamic glaze.',
         price: 16,
         category: 'Starters',
-        isVeg: true,
+        isVegetarian: true,
         isAvailable: true,
     },
     {
@@ -103,7 +103,7 @@ export const MENU_DATA: MenuItem[] = [
         description: 'Bourbon, smoked maple syrup, angostura bitters, orange peel.',
         price: 15,
         category: 'Drinks',
-        isVeg: true,
+        isVegetarian: true,
         isAvailable: true,
     },
 ];

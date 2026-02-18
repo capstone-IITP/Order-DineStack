@@ -91,7 +91,7 @@ export default function ItemDetailModal({ item, onClose }: ItemDetailModalProps)
                         <h2 className="text-3xl font-serif-custom font-bold leading-tight mb-2 drop-shadow-sm">{item.name}</h2>
                         <div className="flex items-center gap-3 text-sm font-medium opacity-90">
                             <span className="bg-white/10 backdrop-blur px-3 py-1 rounded-full border border-white/10">₹{item.price}</span>
-                            {item.isVeg && <span className="flex items-center gap-1.5"><Leaf className="w-4 h-4 text-green-300" /> Vegetarian</span>}
+                            {item.isVegetarian && <span className="flex items-center gap-1.5"><Leaf className="w-4 h-4 text-green-300" /> Vegetarian</span>}
                             {item.isSpicy && <span className="flex items-center gap-1.5">🌶️ Spicy</span>}
                         </div>
                     </div>

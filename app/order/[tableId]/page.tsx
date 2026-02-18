@@ -25,8 +25,11 @@ import {
     Clock,
     History
 } from 'lucide-react';
-import { getTableInfo, placeOrder, getPastOrders, SessionData, Category, MenuItem, CustomerOrder } from '@/lib/api';
+import { getTableInfo, getPastOrders, SessionData, Category, MenuItem as ApiMenuItem, CustomerOrder } from '@/lib/api';
+import { MenuItem } from '@/types';
 import OrdersModal from '@/components/order/OrdersModal';
+import MenuItemCard from '@/components/menu/MenuItemCard';
+import ItemDetailModal from '@/components/menu/ItemDetailModal';
 
 // --- Configuration & Data ---
 
@@ -175,24 +178,18 @@ function OrderContent() {
     const [error, setError] = useState<string | null>(null);
     const [session, setSession] = useState<SessionData | null>(null);
     const [menu, setMenu] = useState<Category[]>([]);
-    const [placingOrder, setPlacingOrder] = useState(false);
-    const [orderSuccess, setOrderSuccess] = useState<string | null>(null);
-    const [orderError, setOrderError] = useState<string | null>(null);
 
     // Past Orders State
     const [pastOrders, setPastOrders] = useState<CustomerOrder[]>([]);
-    const [showPastOrders, setShowPastOrders] = useState(false);
     const [deviceToken, setDeviceToken] = useState<string | null>(null);
 
     // UI state
     const [activeCategory, setActiveCategory] = useState("All");
     const [searchQuery, setSearchQuery] = useState("");
-    const [cart, setCart] = useState<{ [key: string]: number }>({});
-    const [isCartOpen, setIsCartOpen] = useState(false);
     const [filters, setFilters] = useState({ vegOnly: false, nonVeg: false });
-    const [paymentMethod, setPaymentMethod] = useState<'online' | 'cash'>('cash');
     const [isOrdersOpen, setIsOrdersOpen] = useState(false);
     const [ordersModalTab, setOrdersModalTab] = useState<'current' | 'past'>('current');
+    const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
 
     // Load data from backend
     useEffect(() => {
@@ -230,7 +227,6 @@ function OrderContent() {
         const initDeviceToken = async () => {
             let token = localStorage.getItem('dinestack_device_token');
             if (!token) {
-                // Generate simple UUID-like string if crypto.randomUUID not available (though it is in modern browsers)
                 try {
                     token = crypto.randomUUID();
                 } catch (e) {
@@ -257,8 +253,6 @@ function OrderContent() {
 
     // Identity Logic
     useEffect(() => {
-        // We only check identity AFTER the menu has loaded or concurrently, 
-        // but for UX, let's just check immediately on mount.
         const name = localStorage.getItem('dinestack_customer_name');
         const phone = localStorage.getItem('dinestack_customer_phone');
         if (name && phone && /^\d{10}$/.test(phone)) {
@@ -276,22 +270,12 @@ function OrderContent() {
         setShowIdentityForm(false);
     };
 
-
-
-    // --- Cart Logic ---
-    const handleAddToCart = (id: string) => setCart(p => ({ ...p, [id]: (p[id] || 0) + 1 }));
-    const handleRemoveFromCart = (id: string) => setCart(p => {
-        const n = { ...p };
-        if (n[id] > 1) n[id]--; else delete n[id];
-        return n;
-    });
-
     // Flatten menu items for filtering
     const allMenuItems = useMemo(() => {
         return menu.flatMap(cat => cat.items.map(item => ({
             ...item,
             category: cat.name
-        })));
+        } as MenuItem)));
     }, [menu]);
 
     // Get unique categories from menu data
@@ -317,69 +301,6 @@ function OrderContent() {
             return true;
         });
     }, [allMenuItems, activeCategory, searchQuery, filters]);
-
-    const cartTotal = Object.entries(cart).reduce((acc, [id, qty]) => {
-        const item = allMenuItems.find(i => i.id === id);
-        return acc + (item ? item.price * qty : 0);
-    }, 0);
-
-    const cartItemCount = Object.values(cart).reduce((a, b) => a + b, 0);
-
-    // --- Order Placement ---
-    const handlePlaceOrder = async () => {
-        if (cartItemCount === 0) return;
-
-        setPlacingOrder(true);
-        setIsCartOpen(false);
-        setOrderError(null); // Clear previous error
-
-        try {
-            const orderItems = Object.entries(cart).map(([id, qty]) => {
-                const item = allMenuItems.find(i => i.id === id);
-                return {
-                    menuItemId: id,
-                    quantity: qty,
-                    price: item?.price || 0
-                };
-            });
-
-            const result = await placeOrder(
-                orderItems,
-                cartTotal,
-                tableId,
-                deviceToken || undefined
-            );
-
-            setCart({});
-            setOrderSuccess(result.orderNumber || 'placed');
-
-            // Redirect to success page
-            const params = new URLSearchParams();
-            const orderId = result.orderNumber || result.order?.id;
-            if (orderId) params.set('orderId', orderId);
-
-            // Access estimatedTime from the result root (as returned by PlaceOrder)
-            const eta = result.estimatedTime || '20 mins';
-            params.set('eta', eta);
-
-            router.push(`/order-success?${params.toString()}`);
-
-        } catch (err: any) {
-            console.error('Order placement error:', err);
-            // Extract error message from axios error response
-            const errorMessage = err?.response?.data?.error
-                || err?.message
-                || 'Failed to place order. Please try again.';
-            setOrderError(errorMessage);
-
-            // Auto-dismiss error after 6 seconds
-            setTimeout(() => {
-                setOrderError(null);
-            }, 6000);
-        } finally {
-            setPlacingOrder(false);
-        }
-    };
 
     // Loading State
     if (loading) {
@@ -447,7 +368,6 @@ function OrderContent() {
                             style={{ borderColor: THEME.border }}
                         >
                             <ClipboardList size={20} style={{ color: THEME.primary }} />
-                            {/* Optional: Add a red dot if there are active orders (requires checking orders first, skipping for now) */}
                         </button>
 
                         {/* Table Badge */}
@@ -524,66 +444,18 @@ function OrderContent() {
                 ) : (
                     <div className="space-y-6">
                         {filteredItems.map((item, index) => (
-                            <div
-                                key={item.id}
-                                className="group relative bg-white rounded-3xl p-5 shadow-sm border border-transparent hover:border-wine/10 hover:shadow-md transition-all duration-300 animate-fade-in-up"
-                                style={{ animationDelay: `${index * 50}ms`, borderColor: THEME.border }}
-                            >
-                                <div className="relative z-10 flex justify-between gap-4">
-                                    <div className="flex-1">
-                                        <div className="flex items-center gap-2 mb-2">
-                                            <DotIndicator isVegetarian={item.isVegetarian} />
-                                            <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: THEME.textMuted }}>{item.category}</span>
-                                        </div>
-                                        <h3 className="text-lg font-medium mb-2 leading-tight" style={{ color: THEME.text }}>{item.name}</h3>
-                                        <p className="text-sm leading-relaxed line-clamp-2" style={{ color: THEME.textMuted }}>{item.description || "Freshly prepared with authentic ingredients."}</p>
-
-                                        <div className="mt-4 flex items-center gap-3">
-                                            <span className="text-xl font-light" style={{ color: THEME.primary }}>₹{Math.floor(item.price)}<span className="text-sm text-gray-400">.00</span></span>
-                                        </div>
-                                    </div>
-
-                                    {/* Interactive Add Button Column */}
-                                    <div className="flex flex-col justify-end items-end">
-                                        {cart[item.id] ? (
-                                            <div className="flex flex-col items-center rounded-2xl p-1 gap-2 shadow-sm border border-gray-100" style={{ backgroundColor: '#F8F8F8' }}>
-                                                <button
-                                                    onClick={() => handleAddToCart(item.id)}
-                                                    className="w-8 h-8 flex items-center justify-center rounded-xl text-white hover:opacity-90 active:scale-90 transition-all"
-                                                    style={{ backgroundColor: THEME.primary }}
-                                                >
-                                                    <Plus size={16} strokeWidth={3} />
-                                                </button>
-                                                <span className="font-bold text-sm py-1" style={{ color: THEME.text }}>{cart[item.id]}</span>
-                                                <button
-                                                    onClick={() => handleRemoveFromCart(item.id)}
-                                                    className="w-8 h-8 flex items-center justify-center bg-white text-gray-500 rounded-xl hover:bg-gray-100 active:scale-90 transition-all shadow-sm"
-                                                >
-                                                    <Minus size={16} strokeWidth={3} />
-                                                </button>
-                                            </div>
-                                        ) : (
-                                            <button
-                                                onClick={() => handleAddToCart(item.id)}
-                                                className="w-10 h-10 flex items-center justify-center border rounded-2xl hover:scale-105 active:scale-95 transition-all shadow-sm group/btn"
-                                                style={{
-                                                    borderColor: THEME.border,
-                                                    color: THEME.primary,
-                                                    backgroundColor: THEME.surface
-                                                }}
-                                            >
-                                                <Plus size={20} />
-                                            </button>
-                                        )}
-                                    </div>
-                                </div>
+                            <div key={item.id} className="animate-fade-in-up" style={{ animationDelay: `${index * 50}ms` }}>
+                                <MenuItemCard
+                                    item={item}
+                                    onClick={() => setSelectedItem(item)}
+                                />
                             </div>
                         ))}
                     </div>
                 )}
 
                 {/* Past Orders Banner */}
-                {pastOrders.length > 0 && !isCartOpen && (
+                {pastOrders.length > 0 && (
                     <div className="mx-6 mt-4 mb-2 p-4 rounded-xl shadow-sm border border-orange-100 flex items-center justify-between animate-fade-in"
                         style={{ backgroundColor: '#FFF8E1' }}>
                         <div className="flex flex-col">
@@ -606,189 +478,7 @@ function OrderContent() {
                 )}
             </main>
 
-            {/* Note: Separate Past Orders Modal removed in favor of unified OrdersModal */}
-
-            {/* Floating Glass Cart */}
-            {
-                cartItemCount > 0 && !isCartOpen && (
-                    <div className="absolute bottom-8 left-6 right-6 z-50 animate-bounce-in">
-                        <button
-                            onClick={() => setIsCartOpen(true)}
-                            className="w-full h-16 relative overflow-hidden rounded-2xl shadow-xl flex items-center justify-between px-1 group active:scale-[0.98] transition-transform"
-                            style={{
-                                backgroundColor: THEME.primary,
-                                color: 'white',
-                                boxShadow: '0 10px 30px -10px rgba(139, 30, 63, 0.5)'
-                            }}
-                        >
-                            {/* Sheen */}
-                            <div className="absolute inset-0 bg-gradient-to-b from-white/10 to-transparent pointer-events-none" />
-
-                            <div className="flex items-center gap-4 pl-4 relative z-10">
-                                <div className="bg-white/20 px-3 py-1.5 rounded-lg flex flex-col leading-none">
-                                    <span className="text-[10px] text-white/80 font-bold uppercase">Items</span>
-                                    <span className="text-lg font-bold text-white">{cartItemCount}</span>
-                                </div>
-                                <div className="flex flex-col items-start leading-none">
-                                    <span className="text-[10px] text-white/80 font-bold uppercase tracking-wider">Total</span>
-                                    <span className="text-xl font-black text-white">₹{cartTotal.toFixed(2)}</span>
-                                </div>
-                            </div>
-
-                            <div className="pr-5 relative z-10 flex items-center gap-2 text-white font-bold text-sm uppercase tracking-wide">
-                                Checkout <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform" />
-                            </div>
-                        </button>
-                    </div>
-                )
-            }
-
-            {/* Cart Modal (Sheet) */}
-            {
-                isCartOpen && !placingOrder && (
-                    <div className="absolute inset-0 z-50 flex flex-col justify-end bg-black/60 backdrop-blur-sm animate-fade-in">
-                        <div className="absolute inset-0" onClick={() => setIsCartOpen(false)} />
-
-                        <div className="w-full bg-white rounded-t-[40px] max-h-[85vh] flex flex-col shadow-2xl animate-slide-up relative" style={{ backgroundColor: '#FFFBEA' }}>
-
-                            {/* Handle */}
-                            <div className="w-full flex justify-center pt-4 pb-2" onClick={() => setIsCartOpen(false)}>
-                                <div className="w-16 h-1 bg-gray-300 rounded-full" />
-                            </div>
-
-                            <div className="px-8 py-4 flex items-center justify-between">
-                                <h2 className="text-2xl font-light" style={{ color: THEME.text }}>Your <span className="font-bold" style={{ color: THEME.primary }}>Order</span></h2>
-                                <button onClick={() => setIsCartOpen(false)} className="bg-gray-100 p-2 rounded-full text-gray-500 hover:text-gray-900 transition-colors">
-                                    <X size={20} />
-                                </button>
-                            </div>
-
-                            {/* Cart Items */}
-                            <div className="flex-1 overflow-y-auto px-8 py-2 space-y-6">
-                                {Object.entries(cart).map(([id, qty]) => {
-                                    const item = allMenuItems.find(i => i.id === id);
-                                    return item ? (
-                                        <div key={id} className="flex justify-between items-center group">
-                                            <div className="flex flex-col">
-                                                <div className="flex items-center gap-2 mb-1">
-                                                    <DotIndicator isVegetarian={item.isVegetarian} />
-                                                    <span className="font-medium text-lg" style={{ color: THEME.text }}>{item.name}</span>
-                                                </div>
-                                                <span className="font-bold text-sm" style={{ color: THEME.primary }}>₹{(item.price * qty).toFixed(2)}</span>
-                                            </div>
-
-                                            <div className="flex items-center bg-white rounded-xl border p-1" style={{ borderColor: THEME.border }}>
-                                                <button onClick={() => handleRemoveFromCart(item.id)} className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"><Minus size={14} /></button>
-                                                <span className="w-8 text-center text-sm font-bold" style={{ color: THEME.text }}>{qty}</span>
-                                                <button onClick={() => handleAddToCart(item.id)} className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-green-500 hover:bg-green-50 rounded-lg transition-colors"><Plus size={14} /></button>
-                                            </div>
-                                        </div>
-                                    ) : null;
-                                })}
-                            </div>
-
-                            {/* Checkout Area */}
-                            <div className="p-8 pb-safe rounded-t-[40px] mt-2 border-t border-gray-100 bg-white">
-                                <div className="flex justify-between items-center mb-6">
-                                    <span className="text-gray-400 font-medium">Grand Total</span>
-                                    <span className="text-3xl font-light" style={{ color: THEME.text }}>₹{cartTotal.toFixed(2)}</span>
-                                </div>
-
-                                {/* Payment Method Selection */}
-                                <div className="mb-6">
-                                    <span className="text-xs font-bold uppercase tracking-widest mb-3 block" style={{ color: THEME.textMuted }}>Payment Method</span>
-                                    <div className="flex gap-3">
-                                        <button
-                                            onClick={() => setPaymentMethod('online')}
-                                            className={`flex-1 flex items-center justify-center gap-2 py-4 rounded-xl border-2 transition-all font-semibold ${paymentMethod === 'online'
-                                                ? 'border-[#8B1E3F] bg-[#8B1E3F]/5'
-                                                : 'border-gray-200 bg-white hover:border-gray-300'
-                                                }`}
-                                            style={{ color: paymentMethod === 'online' ? THEME.primary : THEME.textMuted }}
-                                        >
-                                            <Wallet size={20} />
-                                            <span>Online</span>
-                                        </button>
-                                        <button
-                                            onClick={() => setPaymentMethod('cash')}
-                                            className={`flex-1 flex items-center justify-center gap-2 py-4 rounded-xl border-2 transition-all font-semibold ${paymentMethod === 'cash'
-                                                ? 'border-[#8B1E3F] bg-[#8B1E3F]/5'
-                                                : 'border-gray-200 bg-white hover:border-gray-300'
-                                                }`}
-                                            style={{ color: paymentMethod === 'cash' ? THEME.primary : THEME.textMuted }}
-                                        >
-                                            <Banknote size={20} />
-                                            <span>Cash</span>
-                                        </button>
-                                    </div>
-                                </div>
-                                <button
-                                    onClick={handlePlaceOrder}
-                                    className="w-full text-white h-16 rounded-2xl font-bold text-lg uppercase tracking-widest shadow-lg active:scale-[0.98] transition-all flex items-center justify-center gap-2 group"
-                                    style={{ backgroundColor: THEME.primary }}
-                                >
-                                    Confirm Order <ChevronRight className="group-hover:translate-x-1 transition-transform" />
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                )
-            }
-
-            {/* FULL SCREEN LOADING OVERLAY */}
-            {
-                placingOrder && (
-                    <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-white/90 backdrop-blur-md animate-in fade-in duration-300">
-                        <div className="relative">
-                            <div className="w-20 h-20 border-4 border-gray-100 rounded-full" />
-                            <div className="absolute top-0 left-0 w-20 h-20 border-4 border-t-transparent rounded-full animate-spin" style={{ borderColor: THEME.primary, borderTopColor: 'transparent' }} />
-                            <ChefHat size={32} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" style={{ color: THEME.primary }} />
-                        </div>
-                        <h2 className="mt-6 text-xl font-bold" style={{ color: THEME.text }}>Sending to Kitchen...</h2>
-                        <p className="mt-2 text-sm max-w-xs text-center" style={{ color: THEME.textMuted }}>Please wait while we confirm your order with the restaurant.</p>
-                    </div>
-                )
-            }
-
-            {/* Order Success Toast */}
-            {
-                orderSuccess && (
-                    <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[60] w-[90%] max-w-sm animate-in slide-in-from-top-4 fade-in duration-300">
-                        <div className="bg-green-600 text-white px-4 py-3 rounded-xl shadow-xl flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center shrink-0">
-                                <CheckCircle2 size={18} className="text-white" />
-                            </div>
-                            <div>
-                                <h4 className="font-bold text-sm">Order Sent Successfully!</h4>
-                                <p className="text-white/90 text-xs mt-0.5">Order #{orderSuccess} has been placed.</p>
-                            </div>
-                        </div>
-                    </div>
-                )
-            }
-
-            {/* Order Error Toast */}
-            {
-                orderError && (
-                    <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[60] w-[90%] max-w-sm animate-in slide-in-from-top-4 fade-in duration-300">
-                        <div className="bg-red-600 text-white px-4 py-3 rounded-xl shadow-xl flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center shrink-0">
-                                <AlertCircle size={18} className="text-white" />
-                            </div>
-                            <div className="flex-1">
-                                <h4 className="font-bold text-sm">Order Failed</h4>
-                                <p className="text-white/90 text-xs mt-0.5">{orderError}</p>
-                            </div>
-                            <button
-                                onClick={() => setOrderError(null)}
-                                className="p-1 hover:bg-white/10 rounded-full transition-colors"
-                            >
-                                <X size={16} />
-                            </button>
-                        </div>
-                    </div>
-                )
-            }
+            {/* Floating Cart Button is now handled by layout.tsx globally! */}
 
             {/* Orders Modal */}
             <OrdersModal
@@ -801,6 +491,14 @@ function OrderContent() {
                 theme={THEME}
             />
 
+            {/* Item Detail Modal for Customization */}
+            {selectedItem && (
+                <ItemDetailModal
+                    item={selectedItem}
+                    onClose={() => setSelectedItem(null)}
+                />
+            )}
+
             <style>{`
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
@@ -811,13 +509,7 @@ function OrderContent() {
           to { opacity: 1; transform: translateY(0); filter: blur(0); }
         }
         .animate-fade-in-up { animation: fade-in-up 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
-
-        @keyframes slide-up {
-          from { transform: translateY(100%); }
-          to { transform: translateY(0); }
-        }
-        .animate-slide-up { animation: slide-up 0.5s cubic-bezier(0.19, 1, 0.22, 1) forwards; }
-
+        
         @keyframes bounce-in {
             0% { transform: scale(0.9) translateY(20px); opacity: 0; }
             50% { transform: scale(1.05) translateY(-5px); opacity: 1; }
