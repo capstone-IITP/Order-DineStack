@@ -62,6 +62,8 @@ export default function CartDrawer() {
     const [lastOrderId, setLastOrderId] = useState<string | null>(null);
     const [instructions, setInstructions] = useState("");
 
+    const [isClosing, setIsClosing] = useState(false);
+
     // Calculate billing details for display (Frontend only simulation as per user design)
     const subtotal = cartTotal;
     const gst = subtotal * 0.05;
@@ -69,8 +71,10 @@ export default function CartDrawer() {
     const total = subtotal + gst + platformFee;
 
     const handleClose = () => {
-        closeCart();
+        setIsClosing(true);
         setTimeout(() => {
+            closeCart();
+            setIsClosing(false);
             setView('cart'); // Reset view after closing animation
             setLastOrderId(null);
         }, 300);
@@ -87,12 +91,12 @@ export default function CartDrawer() {
         <div className="fixed inset-0 z-50 flex justify-end pointer-events-none">
             {/* Backdrop */}
             <div
-                className="absolute inset-0 bg-black/40 backdrop-blur-sm pointer-events-auto animate-fade-in"
+                className={`absolute inset-0 bg-black/40 backdrop-blur-sm pointer-events-auto ${isClosing ? 'animate-fade-out' : 'animate-fade-in'}`}
                 onClick={handleClose}
             />
 
             {/* Content Container - Acts as the Drawer */}
-            <div className="relative w-full max-w-md h-full bg-[#F4F1EE] shadow-2xl transform transition-transform duration-300 pointer-events-auto animate-slide-in-right flex flex-col font-sans">
+            <div className={`relative w-full max-w-md h-full bg-[#F4F1EE] shadow-2xl transform transition-transform duration-300 pointer-events-auto ${isClosing ? 'animate-slide-out-right' : 'animate-slide-in-right'} flex flex-col font-sans`}>
 
                 {/* --- 1. NEW BIG HEADER (The "Unique" Design) --- */}
                 {/* Only Show Header in Cart View */}
@@ -325,6 +329,12 @@ export default function CartDrawer() {
           to { transform: translateX(0); }
         }
         .animate-slide-in-right { animation: slide-in-right 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+
+        @keyframes slide-out-right {
+          from { transform: translateX(0); }
+          to { transform: translateX(100%); }
+        }
+        .animate-slide-out-right { animation: slide-out-right 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
         
         @keyframes scale-in {
             from { transform: scale(0.8); opacity: 0; }
@@ -337,7 +347,14 @@ export default function CartDrawer() {
           to { opacity: 1; }
         }
         .animate-fade-in { animation: fade-in 0.3s ease-out forwards; }
+
+        @keyframes fade-out {
+          from { opacity: 1; }
+          to { opacity: 0; }
+        }
+        .animate-fade-out { animation: fade-out 0.3s ease-out forwards; }
       `}</style>
         </div>
     );
+
 }
