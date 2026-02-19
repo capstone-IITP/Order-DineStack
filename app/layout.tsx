@@ -3,6 +3,7 @@ import { Geist, Geist_Mono, Playfair_Display, Outfit } from "next/font/google";
 import "./globals.css";
 import { CartProvider } from "@/contexts/CartContext";
 import CartDrawer from "@/components/cart/CartDrawer";
+import SessionGuard from "@/components/SessionGuard";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -47,6 +48,7 @@ export default function RootLayout({
         <CartProvider>
           {children}
           <CartDrawer />
+          <SessionGuard />
         </CartProvider>
       </body>
     </html>

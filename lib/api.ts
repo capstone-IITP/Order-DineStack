@@ -12,8 +12,16 @@ const api = axios.create({
     withCredentials: true, // Enable cookie-based JWT sessions
 });
 
+// Flag to track session expiry state
+let isSessionExpired = false;
+
 // Interceptor to add token to requests
 api.interceptors.request.use((config) => {
+    // If session is already expired, block further requests immediately
+    if (isSessionExpired) {
+        return Promise.reject(new Error('SESSION_EXPIRED_BLOCK'));
+    }
+
     if (typeof window !== 'undefined') {
         const token = localStorage.getItem('customerToken');
         if (token) {
@@ -38,12 +46,28 @@ api.interceptors.response.use(
     async (error) => {
         const originalRequest = error.config;
 
+        // CHECK FOR SESSION EXPIRY FIRST
+        // If backend explicitly says SESSION_EXPIRED, we must block everything
+        if (error.response?.status === 401 && error.response?.data?.code === 'SESSION_EXPIRED') {
+            console.error('Session expired from backend. Blocking app.');
+            isSessionExpired = true;
+
+            // Dispatch global event for UI to handle (show modal)
+            if (typeof window !== 'undefined') {
+                window.dispatchEvent(new Event('session-expired'));
+            }
+
+            // Do NOT retry. Reject immediately.
+            return Promise.reject(error);
+        }
+
+        // Standard 401 handling (Token invalid but NOT expired session logic)
         // If we get a 401 and haven't retried yet, attempt to re-bootstrap session
-        if (error.response?.status === 401 && !originalRequest._retry && currentTableId) {
+        if (error.response?.status === 401 && !originalRequest._retry && currentTableId && !isSessionExpired) {
             originalRequest._retry = true;
 
             try {
-                console.log('Session expired, attempting to re-bootstrap...');
+                console.log('Token invalid, attempting to re-bootstrap...');
                 // Re-bootstrap session by calling table info endpoint
                 const response = await api.get(`/customer/table/${currentTableId}`);
                 const data = response.data;
