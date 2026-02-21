@@ -123,8 +123,8 @@ const ScanQRView = ({ onScanSuccess, onCancel }: { onScanSuccess: (rId: string, 
             { facingMode: "environment" },
             {
               fps: 10,
-              qrbox: { width: 250, height: 250 },
-              aspectRatio: 1.0,
+              disableFlip: false,
+              videoConstraints: { facingMode: "environment" },
             },
             (decodedText) => {
               try {
@@ -191,7 +191,7 @@ const ScanQRView = ({ onScanSuccess, onCancel }: { onScanSuccess: (rId: string, 
             </div>
           )}
 
-          <div id="reader" className="w-full h-full rounded-[2rem] overflow-hidden bg-black"></div>
+          <div id="reader" className="w-full h-full rounded-[2rem] overflow-hidden bg-black [&_#qr-shaded-region]:!hidden [&_img]:!hidden"></div>
 
           <div className={`absolute inset-0 flex flex-col items-center justify-center bg-gray-50/50 backdrop-blur-[2px] space-y-6 transition-all duration-500 z-20 ${scanning ? 'opacity-0 pointer-events-none scale-95' : 'opacity-100 scale-100'}`}>
             <button
