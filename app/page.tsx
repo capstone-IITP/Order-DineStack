@@ -123,8 +123,7 @@ const ScanQRView = ({ onScanSuccess, onCancel }: { onScanSuccess: (rId: string, 
             { facingMode: "environment" },
             {
               fps: 10,
-              disableFlip: false,
-              videoConstraints: { facingMode: "environment" },
+              qrbox: { width: 250, height: 250 },
             },
             (decodedText) => {
               try {
@@ -150,7 +149,7 @@ const ScanQRView = ({ onScanSuccess, onCancel }: { onScanSuccess: (rId: string, 
           setPermissionError(true);
           setScanning(false);
         }
-      }, 500);
+      }, 800);
     } catch (err) {
       console.error("Error starting scanner", err);
       setPermissionError(true);
@@ -170,6 +169,9 @@ const ScanQRView = ({ onScanSuccess, onCancel }: { onScanSuccess: (rId: string, 
 
   return (
     <div className="flex-1 flex flex-col w-full max-w-md mx-auto h-full animate-fade-in relative z-20">
+      {/* Hidden reader — always in DOM so html5-qrcode can find it */}
+      <div id="reader" className={`absolute inset-0 bg-black transition-opacity duration-300 ${scanning ? 'opacity-100 z-10' : 'opacity-0 -z-10 pointer-events-none'}`}></div>
+
       {/* --- Pre-Scan State --- */}
       {!scanning && (
         <div className="flex-1 flex flex-col justify-center items-center p-6 relative z-10">
@@ -208,11 +210,8 @@ const ScanQRView = ({ onScanSuccess, onCancel }: { onScanSuccess: (rId: string, 
       {/* --- Active Scanning State (Full-Screen Camera) --- */}
       {scanning && (
         <div className="flex-1 flex flex-col relative">
-          {/* Camera Feed — fills entire view */}
-          <div id="reader" className="absolute inset-0 bg-black [&>video]:!object-cover [&>video]:!w-full [&>video]:!h-full [&_#qr-shaded-region]:!hidden [&_img]:!hidden [&>canvas]:!hidden"></div>
-
           {/* Dark vignette edges */}
-          <div className="absolute inset-0 pointer-events-none z-10 bg-[radial-gradient(circle_at_center,transparent_35%,rgba(0,0,0,0.7)_100%)]"></div>
+          <div className="absolute inset-0 pointer-events-none z-20 bg-[radial-gradient(circle_at_center,transparent_35%,rgba(0,0,0,0.7)_100%)]"></div>
 
           {/* Scan Frame Overlay */}
           <div className="absolute inset-0 pointer-events-none z-20 flex items-center justify-center">
