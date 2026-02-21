@@ -175,8 +175,8 @@ const ScanQRView = ({ onScanSuccess, onCancel }: { onScanSuccess: (rId: string, 
           <div className="w-20 h-20 bg-gradient-to-tr from-[#8D0B41] to-[#B01E58] rounded-[2rem] flex items-center justify-center mx-auto mb-6 shadow-2xl shadow-[#8D0B41]/40 rotate-6 transform transition-transform hover:rotate-0">
             <ScanLine className="w-10 h-10 text-white" />
           </div>
-          <h2 className="text-4xl font-extrabold text-white tracking-tight leading-tight">Join the<br /><span className="text-[#B01E58]">Experience</span></h2>
-          <p className="text-white/60 text-sm font-medium leading-relaxed max-w-[240px] mx-auto">Simply scan the QR code at your table to explore our digital menu.</p>
+          <h2 className="text-4xl font-extrabold text-[#5A0528] tracking-tight leading-tight">Join the<br />Experience</h2>
+          <p className="text-gray-500 text-sm font-medium leading-relaxed max-w-[240px] mx-auto">Simply scan the QR code at your table to explore our digital menu.</p>
         </div>
 
         <div className={`relative w-full transition-all duration-500 overflow-hidden ${scanning ? 'h-[500px] rounded-[2rem]' : 'h-[200px] rounded-3xl bg-gray-50/50'}`}>
