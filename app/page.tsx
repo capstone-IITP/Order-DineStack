@@ -170,13 +170,13 @@ const ScanQRView = ({ onScanSuccess, onCancel }: { onScanSuccess: (rId: string, 
 
   return (
     <div className="flex-1 flex flex-col justify-center items-center w-full max-w-md mx-auto h-full p-4 animate-fade-in relative z-20">
-      <div className="glass-panel w-full rounded-[3rem] p-1 flex flex-col items-center relative overflow-hidden shadow-2xl border border-white/40">
+      <div className="bg-zinc-950/90 backdrop-blur-2xl w-full rounded-[3rem] p-1 flex flex-col items-center relative overflow-hidden shadow-2xl border border-white/10">
         <div className={`w-full p-8 text-center space-y-4 transition-all duration-500 ${scanning ? 'h-0 opacity-0 overflow-hidden p-0' : 'opacity-100'}`}>
           <div className="w-20 h-20 bg-gradient-to-tr from-[#8D0B41] to-[#B01E58] rounded-[2rem] flex items-center justify-center mx-auto mb-6 shadow-2xl shadow-[#8D0B41]/40 rotate-6 transform transition-transform hover:rotate-0">
             <ScanLine className="w-10 h-10 text-white" />
           </div>
-          <h2 className="text-4xl font-extrabold text-[#5A0528] tracking-tight leading-tight">Join the<br />Experience</h2>
-          <p className="text-gray-500 text-sm font-medium leading-relaxed max-w-[240px] mx-auto">Simply scan the QR code at your table to explore our digital menu.</p>
+          <h2 className="text-4xl font-extrabold text-white tracking-tight leading-tight">Join the<br /><span className="text-[#B01E58]">Experience</span></h2>
+          <p className="text-white/60 text-sm font-medium leading-relaxed max-w-[240px] mx-auto">Simply scan the QR code at your table to explore our digital menu.</p>
         </div>
 
         <div className={`relative w-full transition-all duration-500 overflow-hidden ${scanning ? 'h-[500px] rounded-[2rem]' : 'h-[200px] rounded-3xl bg-gray-50/50'}`}>
@@ -205,12 +205,12 @@ const ScanQRView = ({ onScanSuccess, onCancel }: { onScanSuccess: (rId: string, 
               </div>
             </button>
             <div className="flex flex-col items-center space-y-3">
-              <div className="flex items-center gap-3 w-32 opacity-40">
-                <div className="h-[1px] bg-black flex-1"></div>
-                <span className="text-[10px] font-bold text-black uppercase tracking-widest">OR</span>
-                <div className="h-[1px] bg-black flex-1"></div>
+              <div className="flex items-center gap-3 w-32 opacity-20">
+                <div className="h-[1px] bg-white flex-1"></div>
+                <span className="text-[10px] font-bold text-white uppercase tracking-widest">OR</span>
+                <div className="h-[1px] bg-white flex-1"></div>
               </div>
-              <p className="text-sm font-medium text-gray-500">Use your phone's native camera</p>
+              <p className="text-sm font-medium text-white/50">Use your phone's native camera</p>
             </div>
           </div>
 
