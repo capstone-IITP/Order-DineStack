@@ -87,7 +87,7 @@ const LandingView = ({ onComplete }: { onComplete: () => void }) => {
             <p className="text-center text-[10px] text-gray-400 font-medium leading-relaxed max-w-[200px]">By continuing, you agree to our <a href="#" className="text-[#8D0B41] underline decoration-[#8D0B41]/30 hover:decoration-[#8D0B41] transition-all">Terms of Service</a></p>
             <div className="h-[1px] w-8 bg-gray-100"></div>
             <div className="flex items-center gap-2 grayscale transition-all hover:grayscale-0 opacity-40 hover:opacity-100 duration-500">
-              <span className="text-[9px] tracking-[0.2em] font-black text-gray-400 uppercase">Powered by DineStack</span>
+              <span className="text-[9px] tracking-[0.2em] font-black text-black uppercase">Powered by DineStack</span>
             </div>
           </div>
         </div>
