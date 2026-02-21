@@ -170,7 +170,7 @@ const ScanQRView = ({ onScanSuccess, onCancel }: { onScanSuccess: (rId: string, 
 
   return (
     <div className="flex-1 flex flex-col justify-center items-center w-full max-w-md mx-auto h-full p-4 animate-fade-in relative z-20">
-      <div className="bg-zinc-950/90 backdrop-blur-2xl w-full rounded-[3rem] p-1 flex flex-col items-center relative overflow-hidden shadow-2xl border border-white/10">
+      <div className="glass-panel w-full rounded-[3rem] p-1 flex flex-col items-center relative overflow-hidden shadow-2xl border border-white/40">
         <div className={`w-full p-8 text-center space-y-4 transition-all duration-500 ${scanning ? 'h-0 opacity-0 overflow-hidden p-0' : 'opacity-100'}`}>
           <div className="w-20 h-20 bg-gradient-to-tr from-[#8D0B41] to-[#B01E58] rounded-[2rem] flex items-center justify-center mx-auto mb-6 shadow-2xl shadow-[#8D0B41]/40 rotate-6 transform transition-transform hover:rotate-0">
             <ScanLine className="w-10 h-10 text-white" />
