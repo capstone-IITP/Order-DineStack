@@ -57,35 +57,40 @@ const LandingView = ({ onComplete }: { onComplete: () => void }) => {
   };
 
   return (
-    <div className="flex-1 flex flex-col justify-between w-full max-w-md mx-auto h-full p-4 sm:p-6">
+    <div className="flex-1 flex flex-col justify-between w-full max-w-md mx-auto h-full p-4 sm:p-6 relative z-10">
       <div className="flex-1 flex flex-col items-center pt-16 animate-fade-in">
-        <div className="w-20 h-20 mb-6 relative">
-          <div className="absolute inset-0 border border-white/30 rounded-full animate-spin-slow"></div>
-          <div className="absolute inset-1 border border-white/50 rounded-full flex items-center justify-center bg-white/10 backdrop-blur-md shadow-[0_0_20px_rgba(141,11,65,0.3)]">
-            <span className="font-serif-custom text-4xl text-white italic">L</span>
+        <div className="w-24 h-24 mb-6 relative">
+          <div className="absolute inset-0 border border-white/20 rounded-full animate-spin-slow"></div>
+          <div className="absolute inset-2 border border-white/40 rounded-full flex items-center justify-center bg-white/10 backdrop-blur-xl shadow-[0_0_30px_rgba(255,255,255,0.1)] overflow-hidden">
+            <img src="/assets/DineStack Bg Remove.png" alt="DineStack Logo" className="w-16 h-16 object-contain" />
           </div>
         </div>
-        <h1 className="font-serif-custom text-5xl text-white text-center leading-tight tracking-tight drop-shadow-lg mb-2">Lumière<br /><span className="text-3xl italic opacity-90">Bistro</span></h1>
-        <div className="w-12 h-[1px] bg-white/40 my-4"></div>
-        <p className="text-white/80 text-sm tracking-widest uppercase font-medium">Fine Digital Dining</p>
+        <h1 className="font-sans text-5xl font-extrabold text-white text-center leading-tight tracking-tighter drop-shadow-2xl mb-2">Dine<span className="text-[#B01E58]">Stack</span></h1>
+        <div className="w-16 h-[2px] bg-gradient-to-r from-transparent via-white/50 to-transparent my-4"></div>
+        <p className="text-white/90 text-sm tracking-[0.3em] uppercase font-bold">Smart Dining Solutions</p>
       </div>
       <div className="w-full pb-8 animate-slide-up">
-        <div className="glass-panel rounded-3xl p-6 flex flex-col items-center space-y-6 transform transition-transform hover:scale-[1.02] duration-500">
+        <div className="glass-panel rounded-[2.5rem] p-8 flex flex-col items-center space-y-7 transform transition-all hover:scale-[1.01] duration-500 shadow-2xl border border-white/40">
           <div className="flex flex-col items-center text-center space-y-2 mb-2">
-            <h3 className="text-[#5A0528] font-bold text-lg">Welcome</h3>
-            <p className="text-gray-600 text-sm">Please tap below to start your dining experience.</p>
+            <h3 className="text-[#5A0528] font-black text-2xl tracking-tight">Welcome</h3>
+            <p className="text-gray-600/80 text-[15px] font-medium leading-relaxed">Experience the future of dining.<br />Tap below to begin.</p>
           </div>
-          <button onClick={handleOrder} disabled={status !== 'idle'} className={`w-full text-white rounded-2xl py-4 relative overflow-hidden group shadow-xl shadow-[#8D0B41]/20 transition-all active:scale-[0.98] ${status === 'loading' ? 'bg-[#5A0528] cursor-wait' : 'bg-[#8D0B41] hover:bg-[#B01E58]'}`}>
-            <div className={`absolute inset-0 bg-gradient-to-r from-[#8D0B41] to-[#B01E58] transition-opacity ${status === 'idle' ? 'opacity-100 group-hover:opacity-90' : 'opacity-0'}`}></div>
+          <button onClick={handleOrder} disabled={status !== 'idle'} className={`w-full text-white rounded-2xl py-5 relative overflow-hidden group shadow-2xl shadow-[#8D0B41]/30 transition-all active:scale-[0.97] ${status === 'loading' ? 'bg-[#5A0528] cursor-wait' : 'bg-[#8D0B41] hover:bg-[#B01E58]'}`}>
+            <div className={`absolute inset-0 bg-gradient-to-br from-[#8D0B41] via-[#B01E58] to-[#8D0B41] bg-[length:200%_200%] animate-gradient-xy transition-opacity ${status === 'idle' ? 'opacity-100 group-hover:scale-105' : 'opacity-0'}`}></div>
             <div className="relative flex items-center justify-center space-x-3">
-              {status === 'idle' && <><span className="font-medium text-lg tracking-wide">View Menu</span><Utensils className="w-4 h-4 opacity-60 group-hover:rotate-12 transition-transform duration-300" /></>}
-              {status === 'loading' && <><span className="font-medium text-lg tracking-wide">Enter</span><Loader2 className="w-5 h-5 animate-spin" /></>}
-              {status === 'success' && <><span className="font-medium text-lg tracking-wide">Welcome</span><Check className="w-5 h-5 animate-[scale-in_0.3s_ease-out]" /></>}
+              {status === 'idle' && <><span className="font-bold text-xl tracking-tight">View Menu</span><ChevronRight className="w-6 h-6 opacity-80 group-hover:translate-x-1 transition-transform" /></>}
+              {status === 'loading' && <><span className="font-bold text-xl tracking-tight">Entering...</span><Loader2 className="w-6 h-6 animate-spin" /></>}
+              {status === 'success' && <><span className="font-bold text-xl tracking-tight">Welcome</span><CheckCircle2 className="w-6 h-6 animate-[scale-in_0.3s_ease-out]" /></>}
             </div>
           </button>
-          <p className="text-center text-xs text-gray-500 leading-relaxed">By continuing, you agree to our<br /><a href="#" className="underline decoration-gray-300 hover:text-[#8D0B41] transition-colors">Terms of Service</a></p>
+          <div className="flex flex-col items-center space-y-4">
+            <p className="text-center text-[10px] text-gray-400 font-medium leading-relaxed max-w-[200px]">By continuing, you agree to our <a href="#" className="text-[#8D0B41] underline decoration-[#8D0B41]/30 hover:decoration-[#8D0B41] transition-all">Terms of Service</a></p>
+            <div className="h-[1px] w-8 bg-gray-100"></div>
+            <div className="flex items-center gap-2 grayscale transition-all hover:grayscale-0 opacity-40 hover:opacity-100 duration-500">
+              <span className="text-[9px] tracking-[0.2em] font-black text-gray-400 uppercase">Powered by DineStack</span>
+            </div>
+          </div>
         </div>
-        <div className="mt-6 text-center opacity-40 hover:opacity-100 transition-opacity duration-300"><span className="text-[10px] tracking-widest uppercase text-gray-400">Powered by DineStack</span></div>
       </div>
     </div>
   );
@@ -165,13 +170,13 @@ const ScanQRView = ({ onScanSuccess, onCancel }: { onScanSuccess: (rId: string, 
 
   return (
     <div className="flex-1 flex flex-col justify-center items-center w-full max-w-md mx-auto h-full p-4 animate-fade-in relative z-20">
-      <div className="glass-panel w-full rounded-[2.5rem] p-1 flex flex-col items-center relative overflow-hidden shadow-2xl border border-white/40">
-        <div className={`w-full p-6 text-center space-y-3 transition-all duration-500 ${scanning ? 'h-0 opacity-0 overflow-hidden p-0' : 'opacity-100'}`}>
-          <div className="w-16 h-16 bg-gradient-to-tr from-[#8D0B41] to-[#B01E58] rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-[#8D0B41]/30 rotate-3">
-            <ScanLine className="w-8 h-8 text-white" />
+      <div className="glass-panel w-full rounded-[3rem] p-1 flex flex-col items-center relative overflow-hidden shadow-2xl border border-white/40">
+        <div className={`w-full p-8 text-center space-y-4 transition-all duration-500 ${scanning ? 'h-0 opacity-0 overflow-hidden p-0' : 'opacity-100'}`}>
+          <div className="w-20 h-20 bg-gradient-to-tr from-[#8D0B41] to-[#B01E58] rounded-[2rem] flex items-center justify-center mx-auto mb-6 shadow-2xl shadow-[#8D0B41]/40 rotate-6 transform transition-transform hover:rotate-0">
+            <ScanLine className="w-10 h-10 text-white" />
           </div>
-          <h2 className="text-3xl font-serif-custom font-bold text-[#5A0528] tracking-tight">Begin Your<br />Dining Experience</h2>
-          <p className="text-gray-600 text-[15px] leading-relaxed max-w-[260px] mx-auto">Scan the QR code on your table to unlock our digital menu.</p>
+          <h2 className="text-4xl font-extrabold text-[#5A0528] tracking-tight leading-tight">Join the<br />Experience</h2>
+          <p className="text-gray-500 text-sm font-medium leading-relaxed max-w-[240px] mx-auto">Simply scan the QR code at your table to explore our digital menu.</p>
         </div>
 
         <div className={`relative w-full transition-all duration-500 overflow-hidden ${scanning ? 'h-[500px] rounded-[2rem]' : 'h-[200px] rounded-3xl bg-gray-50/50'}`}>
@@ -246,36 +251,41 @@ const ConfirmationView = ({ session, onConfirm, onCancel, onResetIdentity }: { s
   }, []);
 
   return (
-    <div className="flex-1 flex flex-col justify-center items-center w-full max-w-md mx-auto h-full p-4 sm:p-6 animate-fade-in">
-      <div className="glass-panel w-full rounded-3xl p-8 flex flex-col items-center space-y-8 relative overflow-hidden">
-        <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-[#8D0B41] to-[#B01E58]"></div>
+    <div className="flex-1 flex flex-col justify-center items-center w-full max-w-md mx-auto h-full p-4 sm:p-6 animate-fade-in relative z-20">
+      <div className="glass-panel w-full rounded-[3rem] p-10 flex flex-col items-center space-y-10 relative overflow-hidden shadow-2xl border border-white/50">
+        <div className="absolute top-0 left-0 w-full h-3 bg-gradient-to-r from-[#5A0528] via-[#B01E58] to-[#8D0B41]"></div>
 
-        <div className="text-center space-y-2">
+        <div className="text-center space-y-3">
           {existingName ? (
             <>
-              <h2 className="text-2xl font-serif-custom text-[#5A0528] italic">Welcome back, {existingName}</h2>
-              <p className="text-gray-600 text-sm">Table {session?.tableId} is ready for you.</p>
+              <h2 className="text-3xl font-black text-[#5A0528] tracking-tight">Welcome back,<br /><span className="text-[#B01E58]">{existingName}</span></h2>
+              <div className="flex items-center justify-center gap-2 text-gray-400 font-bold uppercase tracking-widest text-[10px] pt-1">
+                <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                Confirmed Table {session?.tableId}
+              </div>
             </>
           ) : (
             <>
-              <h2 className="text-2xl font-serif-custom text-[#5A0528] italic">Welcome to Table {session?.tableId}</h2>
-              <p className="text-gray-600 text-sm">Please confirm your table number to proceed.</p>
+              <h2 className="text-3xl font-black text-[#5A0528] tracking-tight">Confirmed!</h2>
+              <p className="text-gray-500 font-semibold text-sm">Table {session?.tableId} is reserved for you.</p>
             </>
           )}
         </div>
 
-        <div className="relative">
-          <div className="w-32 h-32 rounded-full border-4 border-[#8D0B41]/10 flex items-center justify-center bg-[#FDF2F6]">
-            <span className="text-5xl font-serif-custom text-[#8D0B41] font-bold">{session?.tableId || '--'}</span>
+        <div className="relative group">
+          <div className="w-40 h-40 rounded-full border-8 border-white shadow-[0_20px_50px_rgba(141,11,65,0.15)] flex items-center justify-center bg-gradient-to-br from-[#FDF2F6] to-white relative z-10 overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-tr from-[#8D0B41]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+            <span className="text-7xl font-black text-[#8D0B41] tracking-tighter drop-shadow-sm">{session?.tableId || '--'}</span>
           </div>
-          <div className="absolute -bottom-2 -right-2 bg-green-500 text-white p-2 rounded-full shadow-lg">
-            <Check className="w-5 h-5" />
+          <div className="absolute -bottom-2 -right-2 bg-gradient-to-br from-[#22c55e] to-[#16a34a] text-white p-3 rounded-2xl shadow-xl shadow-green-500/30 z-20 transform scale-110">
+            <Check className="w-6 h-6 stroke-[3px]" />
           </div>
         </div>
 
-        <div className="flex flex-col w-full space-y-3 pt-4">
-          <button onClick={onConfirm} className="w-full bg-[#8D0B41] text-white py-4 rounded-xl font-medium shadow-lg shadow-[#8D0B41]/20 hover:bg-[#B01E58] active:scale-[0.98] transition-all">
-            {existingName ? "Confirm & View Menu" : "Confirm Table"}
+        <div className="flex flex-col w-full space-y-4 pt-4">
+          <button onClick={onConfirm} className="w-full bg-gradient-to-r from-[#8D0B41] to-[#B01E58] text-white py-5 rounded-[1.5rem] font-bold text-lg shadow-2xl shadow-[#8D0B41]/30 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3">
+            <span>{existingName ? "Open Menu" : "Confirm & Start"}</span>
+            <ChevronRight className="w-5 h-5" />
           </button>
 
           <div className="flex gap-2">
@@ -333,42 +343,47 @@ const CustomerIdentityView = ({ onComplete }: { onComplete: () => void }) => {
   }, [name, phone]);
 
   return (
-    <div className="flex-1 flex flex-col w-full max-w-md mx-auto h-full bg-[#f8f9fa] animate-fade-in font-sans">
-      <div className="relative overflow-hidden rounded-b-[3rem] shadow-xl shadow-[#8D0B41]/10 z-10 bg-[#5A0528] shrink-0 h-48">
-        <div className="absolute inset-0 bg-gradient-to-br from-[#5A0528] to-[#2E0219]"></div>
-        <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
-        <div className="absolute bottom-0 left-0 w-48 h-48 bg-[#8D0B41]/20 rounded-full blur-2xl translate-y-1/2 -translate-x-1/4"></div>
-        <div className="relative px-6 flex flex-col justify-center h-full text-center space-y-2">
-          <span className="inline-block mx-auto p-3 bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 shadow-lg mb-2">
+    <div className="flex-1 flex flex-col w-full max-w-md mx-auto h-full animate-fade-in font-sans relative z-20">
+      <div className="relative overflow-hidden rounded-b-[4rem] shadow-2xl shadow-[#8D0B41]/20 z-10 bg-[#5A0528] shrink-0 h-56 flex flex-col justify-center items-center">
+        <div className="absolute inset-0 bg-gradient-to-br from-[#5A0528] via-[#8D0B41] to-[#2E0219]"></div>
+        <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 animate-pulse-slow"></div>
+        <div className="absolute bottom-0 left-0 w-48 h-48 bg-[#B01E58]/10 rounded-full blur-2xl translate-y-1/2 -translate-x-1/4"></div>
+
+        <div className="relative px-6 flex flex-col items-center text-center space-y-4">
+          <div className="w-16 h-16 bg-white/10 backdrop-blur-xl rounded-[1.5rem] border border-white/20 shadow-2xl flex items-center justify-center transform -rotate-3">
             <User className="w-8 h-8 text-white" />
-          </span>
-          <h2 className="text-3xl font-serif-custom font-bold text-white leading-tight">Almost There!</h2>
-          <p className="text-white/70 text-sm font-medium">Tell us a bit about yourself</p>
+          </div>
+          <div>
+            <h2 className="text-3xl font-black text-white tracking-tight">Identity</h2>
+            <p className="text-white/60 text-xs font-bold uppercase tracking-[0.2em] pt-1">Personalize Your Order</p>
+          </div>
         </div>
       </div>
-      <div className="flex-1 overflow-y-auto p-6 -mt-6">
-        <form onSubmit={handleSubmit} className="bg-white rounded-[2rem] p-6 shadow-[0_4px_20px_rgba(0,0,0,0.05)] border border-gray-100 space-y-6 relative z-20 animate-slide-up">
-          <div className="space-y-2">
-            <label className="text-sm font-bold text-gray-700 ml-1 flex items-center gap-2">
-              <User className="w-4 h-4 text-[#8D0B41]" />
-              Your Name
+      <div className="flex-1 overflow-y-auto p-6 -mt-10">
+        <form onSubmit={handleSubmit} className="glass-panel rounded-[3rem] p-8 shadow-2xl border border-white/40 space-y-7 relative z-20 animate-slide-up">
+          <div className="space-y-3">
+            <label className="text-[10px] font-black text-[#8D0B41] uppercase tracking-[0.2em] ml-2 flex items-center gap-2">
+              <User className="w-3 h-3" />
+              Full Name
             </label>
-            <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Enter your name" className={`w-full px-5 py-4 bg-gray-50 rounded-2xl text-base font-medium text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 transition-all ${errors.name ? 'ring-2 ring-red-300 bg-red-50/30 focus:ring-red-400' : 'focus:ring-[#8D0B41]/20 focus:bg-white'}`} />
-            {errors.name && (<p className="text-red-500 text-xs font-medium ml-1 flex items-center gap-1 animate-fade-in"><AlertCircle className="w-3 h-3" />{errors.name}</p>)}
+            <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. John Doe" className={`w-full px-6 py-5 bg-gray-50/50 rounded-2xl text-base font-bold text-gray-900 placeholder:text-gray-300 focus:outline-none focus:ring-2 transition-all ${errors.name ? 'ring-2 ring-red-300 bg-red-50/30' : 'focus:ring-[#8D0B41]/20 focus:bg-white'}`} />
+            {errors.name && (<p className="text-red-500 text-[10px] font-bold ml-2 flex items-center gap-1 animate-fade-in"><AlertCircle className="w-3 h-3" />{errors.name}</p>)}
           </div>
-          <div className="space-y-2">
-            <label className="text-sm font-bold text-gray-700 ml-1 flex items-center gap-2">
-              <Phone className="w-4 h-4 text-[#8D0B41]" />
-              Phone Number
+          <div className="space-y-3">
+            <label className="text-[10px] font-black text-[#8D0B41] uppercase tracking-[0.2em] ml-2 flex items-center gap-2">
+              <Phone className="w-3 h-3" />
+              Mobile Number
             </label>
-            <input type="tel" value={phone} onChange={(e) => { const val = e.target.value.replace(/\D/g, '').slice(0, 10); setPhone(val); }} placeholder="10-digit phone number" className={`w-full px-5 py-4 bg-gray-50 rounded-2xl text-base font-medium text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 transition-all ${errors.phone ? 'ring-2 ring-red-300 bg-red-50/30 focus:ring-red-400' : 'focus:ring-[#8D0B41]/20 focus:bg-white'}`} />
-            {errors.phone && (<p className="text-red-500 text-xs font-medium ml-1 flex items-center gap-1 animate-fade-in"><AlertCircle className="w-3 h-3" />{errors.phone}</p>)}
+            <input type="tel" value={phone} onChange={(e) => { const val = e.target.value.replace(/\D/g, '').slice(0, 10); setPhone(val); }} placeholder="10-digit number" className={`w-full px-6 py-5 bg-gray-50/50 rounded-2xl text-base font-bold text-gray-900 placeholder:text-gray-300 focus:outline-none focus:ring-2 transition-all ${errors.phone ? 'ring-2 ring-red-300 bg-red-50/30' : 'focus:ring-[#8D0B41]/20 focus:bg-white'}`} />
+            {errors.phone && (<p className="text-red-500 text-[10px] font-bold ml-2 flex items-center gap-1 animate-fade-in"><AlertCircle className="w-3 h-3" />{errors.phone}</p>)}
           </div>
-          <button type="submit" className="w-full bg-gradient-to-r from-[#8D0B41] to-[#B01E58] text-white py-4 rounded-2xl font-bold text-lg shadow-xl shadow-[#8D0B41]/25 hover:shadow-2xl hover:shadow-[#8D0B41]/40 active:scale-[0.98] transition-all flex items-center justify-center space-x-2 group">
+          <button type="submit" className="w-full bg-gradient-to-r from-[#8D0B41] to-[#B01E58] text-white py-5 rounded-[1.5rem] font-bold text-lg shadow-2xl shadow-[#8D0B41]/30 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3 group">
             <span>Continue to Menu</span>
             <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
           </button>
-          <p className="text-center text-xs text-gray-400 leading-relaxed">Your details help us personalize your experience.<br />We never share your information.</p>
+          <div className="pt-2 text-center">
+            <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest leading-relaxed">Secure & Personalized<br />Dining Experience</p>
+          </div>
         </form>
       </div>
     </div>
@@ -431,8 +446,14 @@ function MainContent() {
   };
 
   return (
-    <div className="flex flex-col h-[100dvh] bg-gradient-to-br from-[#f8f9fa] to-[#e9ecef] overflow-hidden text-[#111111] font-sans">
-      <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-[0.03] pointer-events-none"></div>
+    <div className="flex flex-col h-[100dvh] bg-[#5A0528] overflow-hidden text-[#111111] font-sans relative">
+      {/* Dynamic Background */}
+      <div className="absolute inset-0 z-0">
+        <div className="absolute inset-0 bg-gradient-to-br from-[#5A0528] via-[#8D0B41] to-[#2E0219] opacity-95"></div>
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-[#B01E58]/20 rounded-full blur-[120px] animate-pulse-slow"></div>
+        <div className="absolute bottom-[10%] right-[-5%] w-[35%] h-[35%] bg-[#000]/30 rounded-full blur-[100px] animate-pulse-slow delay-1000"></div>
+        <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-[0.05] mix-blend-overlay"></div>
+      </div>
 
       {mode === 'landing' && (
         <LandingView onComplete={() => session ? setMode('confirm') : setMode('scanning')} />
@@ -458,13 +479,18 @@ function MainContent() {
       {mode === 'menu' && (
         <div className="flex-1 flex flex-col h-full overflow-hidden animate-fade-in relative">
           {/* Header */}
-          <header className="bg-white/80 backdrop-blur-md px-6 py-4 flex justify-between items-center sticky top-0 z-40 border-b border-gray-100">
-            <div>
-              <h1 className="text-xl font-serif-custom font-bold text-[#5A0528]">Lumière Bistro</h1>
-              <p className="text-xs text-gray-500 font-medium">Table {session?.tableId}</p>
+          <header className="bg-white/80 backdrop-blur-xl px-6 py-5 flex justify-between items-center sticky top-0 z-40 border-b border-gray-100 shadow-sm">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#8D0B41] to-[#5A0528] p-1.5 shadow-md shadow-[#8D0B41]/20">
+                <img src="/assets/DineStack Bg Remove.png" alt="DS" className="w-full h-full object-contain brightness-0 invert" />
+              </div>
+              <div>
+                <h1 className="text-xl font-bold tracking-tight text-[#5A0528]">DineStack</h1>
+                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Table {session?.tableId}</p>
+              </div>
             </div>
-            <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
-              <User className="w-4 h-4 text-gray-600" />
+            <div className="w-10 h-10 rounded-full bg-gray-50 border border-gray-100 flex items-center justify-center shadow-inner group active:scale-95 transition-transform">
+              <User className="w-5 h-5 text-gray-400 group-hover:text-[#8D0B41] transition-colors" />
             </div>
           </header>
 
