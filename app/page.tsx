@@ -2,8 +2,7 @@
 
 import React, { useState, useEffect, useRef, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Html5Qrcode } from 'html5-qrcode';
-import { Utensils, Loader2, Check, Lock, ScanLine, Camera, WifiOff, X, User, Phone, CheckCircle2, AlertCircle, ChevronRight } from 'lucide-react';
+import { Utensils, Loader2, Check, Lock, ScanLine, X, User, Phone, CheckCircle2, AlertCircle, ChevronRight } from 'lucide-react';
 
 // New Imports
 // CartProvider removed from here as it is now in layout.tsx
@@ -96,149 +95,76 @@ const LandingView = ({ onComplete }: { onComplete: () => void }) => {
   );
 };
 
-const ScanQRView = ({ onScanSuccess, onCancel }: { onScanSuccess: (rId: string, tId: string) => void, onCancel?: () => void }) => {
-  const [permissionError, setPermissionError] = useState(false);
-  const [scanning, setScanning] = useState(false);
-  const scannerRef = useRef<Html5Qrcode | null>(null);
-
-  useEffect(() => {
-    return () => {
-      if (scannerRef.current) {
-        scannerRef.current.stop().catch(console.error);
-      }
-    };
-  }, []);
-
-  const startScanning = async () => {
-    setScanning(true);
-    setPermissionError(false);
-
-    try {
-      const scanner = new Html5Qrcode("reader");
-      scannerRef.current = scanner;
-
-      setTimeout(async () => {
-        try {
-          await scanner.start(
-            { facingMode: "environment" },
-            {
-              fps: 10,
-              qrbox: { width: 250, height: 250 },
-            },
-            (decodedText) => {
-              try {
-                const url = new URL(decodedText);
-                const params = new URLSearchParams(url.search);
-                const rId = params.get('restaurantId');
-                const tId = params.get('tableId');
-
-                if (rId && tId) {
-                  scanner.stop().then(() => {
-                    scannerRef.current = null;
-                    onScanSuccess(rId, tId);
-                  }).catch(console.error);
-                }
-              } catch (e) {
-                console.error("QR Parse Error", e);
-              }
-            },
-            (errorMessage) => { }
-          );
-        } catch (innerErr) {
-          console.error("Error starting scanner delayed", innerErr);
-          setPermissionError(true);
-          setScanning(false);
-        }
-      }, 800);
-    } catch (err) {
-      console.error("Error starting scanner", err);
-      setPermissionError(true);
-      setScanning(false);
-    }
-  };
-
-  const stopScanning = async () => {
-    if (scannerRef.current) {
-      try {
-        await scannerRef.current.stop();
-        scannerRef.current = null;
-      } catch (e) { console.error(e); }
-    }
-    setScanning(false);
-  };
-
+const ScanInstructionView = ({ onCancel }: { onCancel?: () => void }) => {
   return (
-    <div className="flex-1 flex flex-col w-full max-w-md mx-auto h-full animate-fade-in relative z-20">
-      {/* Hidden reader — always in DOM so html5-qrcode can find it */}
-      <div id="reader" className={`absolute inset-0 bg-black transition-opacity duration-300 ${scanning ? 'opacity-100 z-10' : 'opacity-0 -z-10 pointer-events-none'}`}></div>
+    <div className="flex-1 flex flex-col w-full max-w-md mx-auto h-full animate-fade-in relative z-20 p-6">
+      <div className="flex-1 flex flex-col justify-center items-center">
+        <div className="bg-zinc-950/90 backdrop-blur-2xl w-full rounded-[3rem] p-10 flex flex-col items-center relative overflow-hidden shadow-2xl border border-white/10">
+          {/* Decorative Glow */}
+          <div className="absolute top-0 right-0 w-40 h-40 bg-[#B01E58]/20 rounded-full blur-[80px] -translate-y-1/2 translate-x-1/4"></div>
+          <div className="absolute bottom-0 left-0 w-32 h-32 bg-[#8D0B41]/15 rounded-full blur-[60px] translate-y-1/2 -translate-x-1/4"></div>
 
-      {/* --- Pre-Scan State --- */}
-      {!scanning && (
-        <div className="flex-1 flex flex-col justify-center items-center p-6 relative z-10">
-          <div className="bg-zinc-950/90 backdrop-blur-2xl w-full rounded-[3rem] p-10 flex flex-col items-center relative overflow-hidden shadow-2xl border border-white/10">
-            <div className="w-20 h-20 bg-gradient-to-tr from-[#8D0B41] to-[#B01E58] rounded-[1.8rem] flex items-center justify-center mx-auto mb-8 shadow-2xl shadow-[#8D0B41]/40 rotate-6">
-              <ScanLine className="w-10 h-10 text-white" />
+          {/* Icon */}
+          <div className="relative mb-8">
+            <div className="w-24 h-24 bg-gradient-to-tr from-[#8D0B41] to-[#B01E58] rounded-[2rem] flex items-center justify-center shadow-2xl shadow-[#8D0B41]/40 rotate-6">
+              <ScanLine className="w-12 h-12 text-white" />
             </div>
-            <h2 className="text-3xl font-extrabold text-white tracking-tight text-center leading-tight mb-3">Scan to <span className="text-[#B01E58]">Dine</span></h2>
-            <p className="text-white/50 text-sm font-medium leading-relaxed text-center max-w-[260px] mb-10">Point your camera at the QR code on your table to get started.</p>
+            <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-lg">
+              <Phone className="w-4 h-4 text-[#8D0B41]" />
+            </div>
+          </div>
 
-            {permissionError && (
-              <div className="w-full bg-red-500/10 border border-red-500/20 rounded-2xl p-4 mb-6 text-center">
-                <p className="text-red-400 text-xs font-bold">Camera access denied. Please enable permissions.</p>
+          {/* Title */}
+          <h2 className="text-3xl font-extrabold text-white tracking-tight text-center leading-tight mb-3">
+            Scan <span className="text-[#B01E58]">QR Code</span>
+          </h2>
+          <p className="text-white/50 text-sm font-medium leading-relaxed text-center max-w-[280px] mb-10">
+            Open your phone&apos;s camera and point it at the QR code on your table.
+          </p>
+
+          {/* Steps */}
+          <div className="w-full space-y-4 mb-10">
+            <div className="flex items-center gap-4 bg-white/5 border border-white/10 rounded-2xl p-4">
+              <div className="w-10 h-10 rounded-xl bg-[#8D0B41]/20 flex items-center justify-center shrink-0">
+                <span className="text-[#B01E58] font-black text-sm">1</span>
               </div>
-            )}
-
-            <button
-              onClick={startScanning}
-              className="w-full group relative py-5 bg-gradient-to-r from-[#8D0B41] to-[#B01E58] text-white rounded-2xl font-bold text-lg shadow-2xl shadow-[#8D0B41]/30 hover:scale-[1.02] active:scale-[0.97] transition-all overflow-hidden"
-            >
-              <div className="relative flex items-center justify-center gap-3">
-                <Camera className="w-5 h-5" />
-                <span>Open Camera</span>
+              <div>
+                <p className="text-white text-sm font-bold">Open Camera App</p>
+                <p className="text-white/40 text-xs">Use your phone&apos;s built-in camera</p>
               </div>
-            </button>
-
-            <div className="flex items-center gap-3 w-full mt-6 opacity-30">
-              <div className="h-[1px] bg-white flex-1"></div>
-              <span className="text-[9px] font-bold text-white uppercase tracking-widest">or use native camera</span>
-              <div className="h-[1px] bg-white flex-1"></div>
             </div>
-          </div>
-        </div>
-      )}
 
-      {/* --- Active Scanning State (Full-Screen Camera) --- */}
-      {scanning && (
-        <div className="flex-1 flex flex-col relative">
-          {/* Dark vignette edges */}
-          <div className="absolute inset-0 pointer-events-none z-20 bg-[radial-gradient(circle_at_center,transparent_35%,rgba(0,0,0,0.7)_100%)]"></div>
+            <div className="flex items-center gap-4 bg-white/5 border border-white/10 rounded-2xl p-4">
+              <div className="w-10 h-10 rounded-xl bg-[#8D0B41]/20 flex items-center justify-center shrink-0">
+                <span className="text-[#B01E58] font-black text-sm">2</span>
+              </div>
+              <div>
+                <p className="text-white text-sm font-bold">Point at QR Code</p>
+                <p className="text-white/40 text-xs">Scan the code placed on your dining table</p>
+              </div>
+            </div>
 
-          {/* Scan Frame Overlay */}
-          <div className="absolute inset-0 pointer-events-none z-20 flex items-center justify-center">
-            <div className="relative w-60 h-60">
-              {/* Corner Brackets */}
-              <div className="absolute -top-1 -left-1 w-12 h-12 border-t-[3px] border-l-[3px] border-white rounded-tl-2xl"></div>
-              <div className="absolute -top-1 -right-1 w-12 h-12 border-t-[3px] border-r-[3px] border-white rounded-tr-2xl"></div>
-              <div className="absolute -bottom-1 -left-1 w-12 h-12 border-b-[3px] border-l-[3px] border-white rounded-bl-2xl"></div>
-              <div className="absolute -bottom-1 -right-1 w-12 h-12 border-b-[3px] border-r-[3px] border-white rounded-br-2xl"></div>
-              {/* Laser Line */}
-              <div className="absolute left-3 right-3 h-[2px] bg-gradient-to-r from-transparent via-[#B01E58] to-transparent shadow-[0_0_15px_#B01E58] animate-laser"></div>
+            <div className="flex items-center gap-4 bg-white/5 border border-white/10 rounded-2xl p-4">
+              <div className="w-10 h-10 rounded-xl bg-[#8D0B41]/20 flex items-center justify-center shrink-0">
+                <span className="text-[#B01E58] font-black text-sm">3</span>
+              </div>
+              <div>
+                <p className="text-white text-sm font-bold">Tap the Link</p>
+                <p className="text-white/40 text-xs">You&apos;ll be redirected to the menu automatically</p>
+              </div>
             </div>
           </div>
 
-          {/* Bottom Status Bar */}
-          <div className="absolute bottom-0 left-0 right-0 z-30 pb-8 pt-16 bg-gradient-to-t from-black/80 to-transparent flex flex-col items-center gap-4">
-            <p className="text-white/80 text-xs font-bold uppercase tracking-[0.15em]">Looking for QR code...</p>
-            <button
-              onClick={stopScanning}
-              className="bg-white/15 backdrop-blur-xl border border-white/20 text-white px-8 py-3 rounded-full text-xs font-bold uppercase tracking-widest hover:bg-white/25 transition-all active:scale-95 flex items-center gap-2"
-            >
-              <X className="w-4 h-4" />
-              Cancel
-            </button>
-          </div>
+          {/* Back Button */}
+          <button
+            onClick={onCancel}
+            className="w-full py-4 bg-white/10 border border-white/15 text-white/80 rounded-2xl font-bold text-sm uppercase tracking-widest hover:bg-white/15 transition-all active:scale-[0.97] flex items-center justify-center gap-2"
+          >
+            <ChevronRight className="w-4 h-4 rotate-180" />
+            Back to Home
+          </button>
         </div>
-      )}
+      </div>
     </div>
   );
 };
@@ -420,12 +346,6 @@ function MainContent() {
 
   if (!IS_RESTAURANT_OPEN) return <ClosedView />;
 
-  const handleScanSuccess = (rId: string, tId: string) => {
-    setSession({ restaurantId: rId, tableId: tId });
-    localStorage.setItem('dinestack_session', JSON.stringify({ restaurantId: rId, tableId: tId }));
-    setMode('confirm');
-  };
-
   const handleConfirmTable = () => {
     if (isValidIdentity()) {
       setMode('menu');
@@ -461,7 +381,7 @@ function MainContent() {
       )}
 
       {mode === 'scanning' && (
-        <ScanQRView onScanSuccess={handleScanSuccess} onCancel={() => setMode('landing')} />
+        <ScanInstructionView onCancel={() => setMode('landing')} />
       )}
 
       {mode === 'confirm' && (
