@@ -85,3 +85,39 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(141, 11, 65, 0.3);
 }
+
+/* QR Scanner Laser Animation */
+@keyframes laser {
+  0% {
+    top: 5%;
+  }
+
+  50% {
+    top: 90%;
+  }
+
+  100% {
+    top: 5%;
+  }
+}
+
+.animate-laser {
+  animation: laser 2.5s ease-in-out infinite;
+}
+
+/* Hide html5-qrcode library default UI */
+#qr-shaded-region {
+  display: none !important;
+}
+
+#reader>img,
+#reader>canvas {
+  display: none !important;
+}
+
+#reader video {
+  object-fit: cover !important;
+  width: 100% !important;
+  height: 100% !important;
+  border-radius: 0 !important;
+}
