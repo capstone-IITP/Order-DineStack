@@ -42,10 +42,10 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
     const [isCartOpen, setIsCartOpen] = useState(false);
     const [isLoaded, setIsLoaded] = useState(false);
 
-    // Load from LocalStorage on mount
+    // Load from SessionStorage on mount
     useEffect(() => {
         try {
-            const savedCart = localStorage.getItem('dinestack_cart');
+            const savedCart = sessionStorage.getItem('dinestack_cart');
             if (savedCart) {
                 setCartItems(JSON.parse(savedCart));
             }
@@ -56,10 +56,10 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
         }
     }, []);
 
-    // Save to LocalStorage on change
+    // Save to SessionStorage on change
     useEffect(() => {
         if (isLoaded) {
-            localStorage.setItem('dinestack_cart', JSON.stringify(cartItems));
+            sessionStorage.setItem('dinestack_cart', JSON.stringify(cartItems));
         }
     }, [cartItems, isLoaded]);
 

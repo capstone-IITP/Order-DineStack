@@ -159,7 +159,7 @@ function SuccessContent() {
                     className="mt-4 w-full py-3 rounded-xl border-2 border-dashed font-bold flex items-center justify-center gap-2 transition-all hover:bg-gray-50 active:scale-95"
                     style={{ borderColor: THEME.border, color: THEME.textMuted }}
                     onClick={(e) => {
-                        const tableId = localStorage.getItem('sessionData') ? JSON.parse(localStorage.getItem('sessionData')!).table.id : '';
+                        const tableId = sessionStorage.getItem('sessionData') ? JSON.parse(sessionStorage.getItem('sessionData')!).table.id : '';
                         if (tableId) {
                             e.preventDefault();
                             router.push(`/order/${tableId}`);

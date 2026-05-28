@@ -12,8 +12,8 @@ interface CheckoutViewProps {
 
 export default function CheckoutView({ onBack, onSuccess }: CheckoutViewProps) {
     const { cartItems, cartTotal, clearCart } = useCart();
-    const [name, setName] = useState(localStorage.getItem('dinestack_customer_name') || '');
-    const [phone, setPhone] = useState(localStorage.getItem('dinestack_customer_phone') || '');
+    const [name, setName] = useState(sessionStorage.getItem('dinestack_customer_name') || '');
+    const [phone, setPhone] = useState(sessionStorage.getItem('dinestack_customer_phone') || '');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
 

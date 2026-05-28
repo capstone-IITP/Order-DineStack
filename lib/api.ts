@@ -23,7 +23,7 @@ api.interceptors.request.use((config) => {
     }
 
     if (typeof window !== 'undefined') {
-        const token = localStorage.getItem('customerToken');
+        const token = sessionStorage.getItem('customerToken') || localStorage.getItem('customerToken');
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
         }
@@ -73,9 +73,7 @@ api.interceptors.response.use(
                 const data = response.data;
 
                 if (data.token) {
-                    localStorage.setItem('customerToken', data.token);
-                    localStorage.setItem('sessionData', JSON.stringify({
-                        token: data.token,
+                    sessionStorage.setItem('sessionData', JSON.stringify({
                         restaurant: data.restaurant,
                         table: data.table
                     }));
@@ -89,8 +87,8 @@ api.interceptors.response.use(
             } catch (retryError) {
                 console.error('Failed to re-bootstrap session:', retryError);
                 // Clear stored credentials on failed retry
-                localStorage.removeItem('customerToken');
-                localStorage.removeItem('sessionData');
+                sessionStorage.removeItem('customerToken');
+                sessionStorage.removeItem('sessionData');
                 throw error; // Throw original error
             }
         }
@@ -149,8 +147,8 @@ export const initSession = async (restaurantId: string, tableId: string): Promis
         };
 
         if (sessionData.token) {
-            localStorage.setItem('customerToken', sessionData.token);
-            localStorage.setItem('sessionData', JSON.stringify(sessionData));
+            const { token, ...restSessionData } = sessionData;
+            sessionStorage.setItem('sessionData', JSON.stringify(restSessionData));
         }
 
         return sessionData;
@@ -249,11 +247,9 @@ export const getTableInfo = async (tableId: string): Promise<TableInfoResponse> 
         const response = await api.get(`/customer/table/${tableId}`);
         const data = response.data;
 
-        // Store token
+        // Store session details (omit raw JWT token)
         if (data.token) {
-            localStorage.setItem('customerToken', data.token);
-            localStorage.setItem('sessionData', JSON.stringify({
-                token: data.token,
+            sessionStorage.setItem('sessionData', JSON.stringify({
                 restaurant: data.restaurant,
                 table: data.table
             }));
@@ -313,11 +309,10 @@ export const getCustomerOrders = async (restaurantId: string, phone: string): Pr
         const cleaned = phone.replace(/\D/g, '');
         const normalizedPhone = cleaned.length === 10 ? `+91${cleaned}` : (cleaned.length === 12 && cleaned.startsWith('91') ? `+${cleaned}` : phone);
 
-        console.log(`[API] Fetching orders for Restaurant: ${restaurantId}, Phone: ${normalizedPhone} (Original: ${phone})`);
+        console.log(`[API] Fetching orders for Restaurant: ${restaurantId}`);
         const response = await api.get(`/customer/orders`, {
             params: { restaurantId, phone: normalizedPhone }
         });
-        console.log('[API] Orders fetched:', response.data);
         return response.data.orders || [];
     } catch (error: any) {
         // If the endpoint is missing (404), treat it as "No orders found" to avoid UI errors

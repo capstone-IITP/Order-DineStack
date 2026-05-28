@@ -254,8 +254,8 @@ function OrderContent() {
 
     // Identity Logic
     useEffect(() => {
-        const name = localStorage.getItem('dinestack_customer_name');
-        const phone = localStorage.getItem('dinestack_customer_phone');
+        const name = sessionStorage.getItem('dinestack_customer_name');
+        const phone = sessionStorage.getItem('dinestack_customer_phone');
         if (name && phone && /^\d{10}$/.test(phone)) {
             setIdentity({ name, phone });
             setShowIdentityForm(false);
@@ -265,8 +265,8 @@ function OrderContent() {
     }, []);
 
     const handleIdentitySubmit = (name: string, phone: string) => {
-        localStorage.setItem('dinestack_customer_name', name);
-        localStorage.setItem('dinestack_customer_phone', phone);
+        sessionStorage.setItem('dinestack_customer_name', name);
+        sessionStorage.setItem('dinestack_customer_phone', phone);
         setIdentity({ name, phone });
         setShowIdentityForm(false);
     };

@@ -15,8 +15,9 @@ export default function SessionExpiredModal() {
     }, []);
 
     const handleReScan = () => {
-        // Clear all local storage to ensure fresh state
+        // Clear all local & session storage to ensure fresh state
         localStorage.clear();
+        sessionStorage.clear();
 
         // Redirect to home
         router.push('/');

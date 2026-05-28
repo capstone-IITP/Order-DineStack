@@ -26,8 +26,8 @@ interface Session {
 // --- Verification & Helper Functions ---
 const isValidIdentity = () => {
   if (typeof window === 'undefined') return false;
-  const name = localStorage.getItem('dinestack_customer_name');
-  const phone = localStorage.getItem('dinestack_customer_phone');
+  const name = sessionStorage.getItem('dinestack_customer_name');
+  const phone = sessionStorage.getItem('dinestack_customer_phone');
   return !!(name && name.trim().length >= 2 && phone && /^\d{10}$/.test(phone.trim()));
 };
 
@@ -173,7 +173,7 @@ const ConfirmationView = ({ session, onConfirm, onCancel, onResetIdentity }: { s
   const [existingName, setExistingName] = useState<string | null>(null);
 
   useEffect(() => {
-    const name = localStorage.getItem('dinestack_customer_name');
+    const name = sessionStorage.getItem('dinestack_customer_name');
     if (name) setExistingName(name);
   }, []);
 
@@ -260,8 +260,8 @@ const CustomerIdentityView = ({ onComplete }: { onComplete: () => void }) => {
     e.preventDefault();
     setSubmitted(true);
     if (!validate()) return;
-    localStorage.setItem('dinestack_customer_name', name.trim());
-    localStorage.setItem('dinestack_customer_phone', phone.trim());
+    sessionStorage.setItem('dinestack_customer_name', name.trim());
+    sessionStorage.setItem('dinestack_customer_phone', phone.trim());
     onComplete();
   };
 
@@ -325,22 +325,30 @@ function MainContent() {
 
   useEffect(() => {
     // Check URL first
-    const rId = searchParams.get('restaurantId');
-    const tId = searchParams.get('tableId');
+    const rId = searchParams.get('restaurantId') || searchParams.get('r');
+    const tId = searchParams.get('tableId') || searchParams.get('t');
 
-    // Check localStorage fallback if not in URL
-    const savedSession = typeof window !== 'undefined' ? localStorage.getItem('dinestack_session') : null;
+    // Check sessionStorage fallback if not in URL
+    const savedSession = typeof window !== 'undefined' ? sessionStorage.getItem('dinestack_session') : null;
 
     if (rId && tId) {
-      setSession({ restaurantId: rId, tableId: tId });
-      // If we have URL params, we can skip scanning and go to confirm directly
-      setMode('confirm');
+      const sessionObj = { restaurantId: rId, tableId: tId };
+      setSession(sessionObj);
+      if (typeof window !== 'undefined') {
+        sessionStorage.setItem('dinestack_session', JSON.stringify(sessionObj));
+      }
+      if (isValidIdentity()) {
+        setMode('menu');
+      } else {
+        setMode('identity');
+      }
     } else if (savedSession) {
-      // Rehydrate session
       setSession(JSON.parse(savedSession));
-      // If we have a session AND identity, go to menu? 
-      // This logic can be refined. For now, let's stick to flow or go to landing.
-      // Changing default mode to landing.
+      if (isValidIdentity()) {
+        setMode('menu');
+      } else {
+        setMode('identity');
+      }
     }
   }, [searchParams]);
 
@@ -359,8 +367,8 @@ function MainContent() {
   };
 
   const handleResetIdentity = () => {
-    localStorage.removeItem('dinestack_customer_name');
-    localStorage.removeItem('dinestack_customer_phone');
+    sessionStorage.removeItem('dinestack_customer_name');
+    sessionStorage.removeItem('dinestack_customer_phone');
     // Force re-render/update
     setMode('confirm'); // Will triggering re-render of ConfirmationView
     window.location.reload(); // Simple way to clear state for now
