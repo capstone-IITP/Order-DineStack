@@ -357,7 +357,7 @@ export default function CartDrawer() {
             </div>
 
             <style jsx global>{`
-        .pb-safe { padding-bottom: env(safe-area-inset-bottom, 20px); }
+        .pb-safe { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 24px); }
         .scrollbar-hide::-webkit-scrollbar { display: none; }
         .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
 
