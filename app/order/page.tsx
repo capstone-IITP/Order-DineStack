@@ -110,6 +110,11 @@ function OrderContent() {
     const restaurantId = searchParams.get('r');
     const tableId = searchParams.get('t');
 
+    const isValidId = (id: string | null) => {
+        if (!id) return false;
+        return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+    };
+
     const cartTotal = useMemo(() => {
         return cart.reduce((total, item) => total + (item.price * item.quantity), 0);
     }, [cart]);
@@ -123,6 +128,12 @@ function OrderContent() {
         const loadData = async () => {
             if (!restaurantId || !tableId) {
                 setError('Invalid QR Code. Missing restaurant or table information.');
+                setLoading(false);
+                return;
+            }
+
+            if (!isValidId(restaurantId) || !isValidId(tableId)) {
+                setError('Invalid QR Code format.');
                 setLoading(false);
                 return;
             }
@@ -146,7 +157,6 @@ function OrderContent() {
             }
         };
 
-        loadData();
         loadData();
     }, [restaurantId, tableId]);
 

@@ -231,7 +231,15 @@ export default function CartDrawer() {
                                             placeholder="e.g., Less spicy, allergy info..."
                                             className="w-full bg-white border border-stone-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-[#8D0B41] focus:ring-1 focus:ring-[#8D0B41] transition-all placeholder-stone-400"
                                             value={instructions}
-                                            onChange={(e) => setInstructions(e.target.value)}
+                                            onChange={(e) => {
+                                                let val = e.target.value;
+                                                if (val.length > 200) val = val.substring(0, 200);
+                                                val = val.replace(/[\x00-\x1F\x7F-\x9F]/g, '');
+                                                setInstructions(val);
+                                            }}
+                                            onBlur={() => {
+                                                setInstructions(prev => prev.trim());
+                                            }}
                                         />
                                     </div>
                                 </div>

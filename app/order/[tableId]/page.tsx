@@ -194,9 +194,20 @@ function OrderContent() {
 
     // Load data from backend
     useEffect(() => {
+        const isValidId = (id: string | null) => {
+            if (!id) return false;
+            return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+        };
+
         const loadData = async () => {
             if (!tableId) {
                 setError('Invalid QR Code. No table information found.');
+                setLoading(false);
+                return;
+            }
+
+            if (!isValidId(tableId)) {
+                setError('Invalid QR Code format.');
                 setLoading(false);
                 return;
             }

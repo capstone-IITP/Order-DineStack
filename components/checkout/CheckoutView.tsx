@@ -24,8 +24,14 @@ export default function CheckoutView({ onBack, onSuccess }: CheckoutViewProps) {
 
         try {
             // Validate
-            if (!name.trim() || !phone.trim() || phone.length < 10) {
-                throw new Error("Please provide valid name and phone number.");
+            const nameRegex = /^[A-Za-z\s]{3,50}$/;
+            if (!name.trim() || !nameRegex.test(name.trim())) {
+                throw new Error("Please provide a valid name (letters only).");
+            }
+            
+            const phoneRegex = /^\d{10}$/;
+            if (!phone.trim() || !phoneRegex.test(phone.trim())) {
+                throw new Error("Please provide a valid 10-digit phone number.");
             }
 
             // Prepare payload

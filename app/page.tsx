@@ -24,6 +24,11 @@ interface Session {
 }
 
 // --- Verification & Helper Functions ---
+const isValidId = (id: string | null) => {
+  if (!id) return false;
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+};
+
 const isValidIdentity = () => {
   if (typeof window === 'undefined') return false;
   const name = sessionStorage.getItem('dinestack_customer_name');
@@ -331,7 +336,12 @@ function MainContent() {
     // Check sessionStorage fallback if not in URL
     const savedSession = typeof window !== 'undefined' ? sessionStorage.getItem('dinestack_session') : null;
 
-    if (rId && tId) {
+    if (rId || tId) {
+      if (!rId || !tId || !isValidId(rId) || !isValidId(tId)) {
+        // Invalid format, reject immediately
+        setMode('landing');
+        return;
+      }
       const sessionObj = { restaurantId: rId, tableId: tId };
       setSession(sessionObj);
       if (typeof window !== 'undefined') {

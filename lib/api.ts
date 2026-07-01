@@ -15,19 +15,13 @@ const api = axios.create({
 // Flag to track session expiry state
 let isSessionExpired = false;
 
-// Interceptor to add token to requests
+// Interceptor to add token to requests (Removed local storage token usage)
 api.interceptors.request.use((config) => {
     // If session is already expired, block further requests immediately
     if (isSessionExpired) {
         return Promise.reject(new Error('SESSION_EXPIRED_BLOCK'));
     }
-
-    if (typeof window !== 'undefined') {
-        const token = sessionStorage.getItem('customerToken') || localStorage.getItem('customerToken');
-        if (token) {
-            config.headers.Authorization = `Bearer ${token}`;
-        }
-    }
+    // Token is expected to be handled via httpOnly cookies (withCredentials: true)
     return config;
 });
 
@@ -87,7 +81,6 @@ api.interceptors.response.use(
             } catch (retryError) {
                 console.error('Failed to re-bootstrap session:', retryError);
                 // Clear stored credentials on failed retry
-                sessionStorage.removeItem('customerToken');
                 sessionStorage.removeItem('sessionData');
                 throw error; // Throw original error
             }
