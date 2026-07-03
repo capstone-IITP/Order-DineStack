@@ -77,7 +77,11 @@ export default function MenuItemCard({ item, onClick }: MenuItemCardProps) {
 
     return (
         <div
-            onClick={onClick}
+            onClick={(e) => {
+                if (item.isAvailable) {
+                    handleAddClick(e);
+                }
+            }}
             className={`group relative bg-white rounded-[1.5rem] sm:rounded-[2rem] p-4 sm:p-5 shadow-sm border border-gray-100/50 transition-all duration-300 ${item.isAvailable ? 'cursor-pointer hover:shadow-md' : 'opacity-60 grayscale cursor-not-allowed'}`}
         >
             <div className="flex justify-between items-start gap-3 sm:gap-4">
