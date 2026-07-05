@@ -97,6 +97,9 @@ export interface SessionData {
         name: string;
         description?: string;
         logo?: string;
+        gstEnabled?: boolean;
+        gstMode?: string;
+        defaultGstRate?: number;
     };
     table: {
         id: string;
@@ -132,6 +135,9 @@ export const initSession = async (restaurantId: string, tableId: string): Promis
             restaurant: {
                 id: restaurantId,
                 name: data.restaurantName || 'Restaurant',
+                gstEnabled: data.gstEnabled,
+                gstMode: data.gstMode,
+                defaultGstRate: data.defaultGstRate
             },
             table: {
                 id: tableId,
@@ -181,7 +187,9 @@ export const placeOrder = async (
     items: { menuItemId: string; quantity: number; price: number }[],
     totalAmount: number,
     tableId?: string,
-    deviceToken?: string
+    deviceToken?: string,
+    couponCode?: string,
+    discountAmount?: number
 ) => {
     try {
         // Use provided tableId or fall back to stored currentTableId
@@ -191,7 +199,9 @@ export const placeOrder = async (
             items,
             totalAmount,
             tableId: orderTableId,
-            deviceToken
+            deviceToken,
+            couponCode,
+            discountAmount
         });
         // Backend returns { success: true, order: { id, orderNumber, ... } }
         const order = response.data.order || {};
@@ -243,7 +253,13 @@ export const getTableInfo = async (tableId: string): Promise<TableInfoResponse> 
         // Store session details (omit raw JWT token)
         if (data.token) {
             sessionStorage.setItem('sessionData', JSON.stringify({
-                restaurant: data.restaurant,
+                restaurant: {
+                    id: data.restaurant.id,
+                    name: data.restaurant.name,
+                    gstEnabled: data.restaurant.gstEnabled,
+                    gstMode: data.restaurant.gstMode,
+                    defaultGstRate: data.restaurant.defaultGstRate
+                },
                 table: data.table
             }));
         }
@@ -328,6 +344,30 @@ export const getPastOrders = async (deviceToken: string): Promise<CustomerOrder[
     } catch (error) {
         console.error('Failed to get past orders:', error);
         return [];
+    }
+};
+
+export const getAvailableCoupons = async (restaurantId: string) => {
+    try {
+        const response = await api.get(`/coupons/available/${restaurantId}`);
+        return response.data.coupons || [];
+    } catch (error) {
+        console.error('Failed to get available coupons:', error);
+        return [];
+    }
+};
+
+export const validateCoupon = async (code: string, subtotal: number, restaurantId: string) => {
+    try {
+        const response = await api.post('/coupons/validate', {
+            code,
+            subtotal,
+            restaurantId
+        });
+        return response.data;
+    } catch (error) {
+        console.error('Failed to validate coupon:', error);
+        throw error;
     }
 };
 

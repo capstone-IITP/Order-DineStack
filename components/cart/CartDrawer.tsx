@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
     ArrowLeft,
     Trash2,
@@ -65,11 +65,41 @@ export default function CartDrawer() {
     const [isClosing, setIsClosing] = useState(false);
     const [showClearCartConfirm, setShowClearCartConfirm] = useState(false);
 
-    // Calculate billing details for display (Frontend only simulation as per user design)
+    const [taxConfig, setTaxConfig] = useState({ enabled: true, rate: 5, mode: 'EXCLUSIVE' });
+
+    useEffect(() => {
+        const rawSession = sessionStorage.getItem('sessionData');
+        if (rawSession) {
+            try {
+                const sessionData = JSON.parse(rawSession);
+                if (sessionData && sessionData.restaurant) {
+                    setTaxConfig({
+                        enabled: sessionData.restaurant.gstEnabled !== false,
+                        rate: sessionData.restaurant.defaultGstRate || 5,
+                        mode: sessionData.restaurant.gstMode || 'EXCLUSIVE'
+                    });
+                }
+            } catch (e) {
+                console.error('Failed to parse session data', e);
+            }
+        }
+    }, [isCartOpen]);
+
     const subtotal = cartTotal;
-    const gst = subtotal * 0.05;
     const platformFee = 10;
-    const total = subtotal + gst + platformFee;
+    let gst = 0;
+    let total = subtotal + platformFee;
+
+    if (taxConfig.enabled) {
+        if (taxConfig.mode === 'EXCLUSIVE') {
+            gst = subtotal * (taxConfig.rate / 100);
+            total = subtotal + gst + platformFee;
+        } else {
+            gst = subtotal - (subtotal / (1 + taxConfig.rate / 100));
+            // subtotal is inclusive of gst, so total is just subtotal + platformFee
+            total = subtotal + platformFee;
+        }
+    }
 
     const handleClose = () => {
         setIsClosing(true);
@@ -245,7 +275,10 @@ export default function CartDrawer() {
                                 </div>
 
                                 {/* Offers / Coupon Section */}
-                                <div className="mx-3 sm:mx-4 mt-4 bg-white p-4 rounded-2xl shadow-sm border border-dashed border-stone-300 flex items-center gap-4 cursor-pointer hover:bg-stone-50 transition-colors group">
+                                <div 
+                                    onClick={() => setView('checkout')}
+                                    className="mx-3 sm:mx-4 mt-4 bg-white p-4 rounded-2xl shadow-sm border border-dashed border-stone-300 flex items-center gap-4 cursor-pointer hover:bg-stone-50 transition-colors group"
+                                >
                                     <div className="w-10 h-10 bg-[#8D0B41]/5 rounded-full flex items-center justify-center group-hover:bg-[#8D0B41]/10 transition-colors">
                                         <TicketPercent size={20} className="text-[#8D0B41]" />
                                     </div>
@@ -262,7 +295,12 @@ export default function CartDrawer() {
                                     <div className="bg-white rounded-2xl shadow-sm border border-stone-100 p-5 relative overflow-hidden">
                                         <BillRow label="Item Total" value={formatCurrency(subtotal)} />
                                         <BillRow label="Platform Fee" value={formatCurrency(platformFee)} />
-                                        <BillRow label="GST (5%)" value={formatCurrency(gst)} />
+                                        {taxConfig.enabled && (
+                                            <BillRow 
+                                                label={taxConfig.mode === 'INCLUSIVE' ? `GST (${taxConfig.rate}% Included)` : `GST (${taxConfig.rate}%)`} 
+                                                value={formatCurrency(gst)} 
+                                            />
+                                        )}
 
                                         <div className="my-3 border-t border-dashed border-stone-200"></div>
 
