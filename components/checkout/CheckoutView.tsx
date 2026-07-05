@@ -79,7 +79,7 @@ export default function CheckoutView({ onBack, onSuccess }: CheckoutViewProps) {
         setIsApplyingCoupon(true);
         setCouponError(null);
         try {
-            const result = await validateCoupon(couponCodeInput.trim(), subtotal, taxConfig.restaurantId);
+            const result = await validateCoupon(couponCodeInput.trim().toUpperCase(), subtotal, taxConfig.restaurantId);
             if (result.success) {
                 setAppliedCouponCode(result.couponCode);
                 setDiscountAmount(result.discountAmount);
@@ -225,7 +225,7 @@ export default function CheckoutView({ onBack, onSuccess }: CheckoutViewProps) {
                                     <input
                                         type="text"
                                         value={couponCodeInput}
-                                        onChange={e => setCouponCodeInput(e.target.value.toUpperCase())}
+                                        onChange={e => setCouponCodeInput(e.target.value)}
                                         className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#8D0B41] focus:ring-1 focus:ring-[#8D0B41] uppercase placeholder-gray-400 font-medium"
                                         placeholder="ENTER COUPON CODE"
                                     />
